@@ -6,7 +6,7 @@
 /*   By: klukiano <klukiano@student.hive.fi>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/12/08 15:59:06 by klukiano          #+#    #+#             */
-/*   Updated: 2024/01/17 17:18:02 by klukiano         ###   ########.fr       */
+/*   Updated: 2024/01/18 11:32:47 by klukiano         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -33,11 +33,13 @@
 
 // int	ft_atoi_base(const char *str, int str_base);
 
-int	ft_atoi_base(const char *str, int str_base);
-int	is_valid_str(char *str, char *set);
+#include "../lib/libft/libft.h"
+
+int		ft_atoi_base(const char *str, int str_base);
+int		is_valid_str(char *str, char *set);
 size_t	ft_strlen(const char *str);
-int convert_to_dec(char character);
-int	make_power(int str_base, int exponent);
+int		convert_to_dec(char character);
+int		make_power(int str_base, int exponent);
 
 
 int	ft_atoi_base(const char *str, int str_base)
