@@ -5,7 +5,7 @@ LIBMLX_PATH	= ./lib/MLX42
 LIBFT = $(LIBFT_PATH)/libft.a
 CFLAGS = -Wall -Wextra -Werror
 #HEADERS	= -I ./include -I $(LIBMLX)/include ./lib/get_next_line/get_next_line.h
-HEADERS	= ./lib/get_next_line/get_next_line.h
+HEADERS	= -I ./include -I ./lib/MLX42/include/ -I ./lib/get_next_line/ -I "/Users/klukiano/.brew/opt/glfw/include"
 #EXTRA FLAGS CFLAGS	:= -Wunreachable-code -Ofast
 DEBUGFLAGS = -g -fsanitize=address,undefined,integer #Also Debug MLX
 LIBS	= ./lib/MLX42/build/libmlx42.a -L/Users/klukiano/.brew/lib/ -lglfw -framework Cocoa -framework OpenGL -framework IOKit
@@ -20,11 +20,11 @@ RM = rm -f
 
 all: $(NAME)
 
-$(NAME): $(LIBFT) $(SRCS) $(HEADERS)
-	cc $(CFLAGS) $(SRCS) $(LIBFT) $(GNL_SRCS) $(LIBS)  -o $(NAME)
+$(NAME): $(LIBFT) $(SRCS) libmlx
+	cc $(CFLAGS) $(HEADERS) $(SRCS) $(PRINTF_SRCS) $(LIBFT) $(GNL_SRCS) $(LIBS)   -o $(NAME)
 
-#libmlx:
-##	@cmake $(LIBMLX_PATH) -B $(LIBMLX_PATH)/build && make -C $(LIBMLX_PATH)/build -j4
+libmlx:
+	@cmake $(LIBMLX_PATH) -B $(LIBMLX_PATH)/build && make -C $(LIBMLX_PATH)/build -j4
 
 $(LIBFT):
 	make -C $(LIBFT_PATH)
@@ -37,18 +37,19 @@ $(LIBFT):
 
 debug: .debug
 
-.debug: $(SRCS) $(GNL_SRCS) $(PRINTF_SRCS) $(LIBFT) $(HEADERS)
-	cc $(DEBUGFLAGS) $(SRCS) $(GNL_SRCS) $(PRINTF_SRCS) $(LIBFT) -o debug.out
+.debug: libmlx $(SRCS) $(GNL_SRCS) $(PRINTF_SRCS)
+	cc $(DEBUGFLAGS) $(HEADERS) $(SRCS) $(GNL_SRCS) $(PRINTF_SRCS) $(LIBFT) $(LIBS)  -o debug.out
 	touch .debug
 
 %.o: %.c
-	cc $(CFLAGS) -c $< -o $@
+	cc $(CFLAGS) -c $< -o $@ $(HEADERS)
 
 both: $(NAME) bonus
 
 clean: 
 	make clean -C $(LIBFT_PATH)
 	$(RM) $(OBJCTS) $(BONUS_OBJCTS) $(PRINTF_OBJCTS)
+	$(RM) -r $(LIBMLX_PATH)/build
 	
 fclean: clean
 	make -C $(LIBFT_PATH) fclean

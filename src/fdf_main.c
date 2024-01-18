@@ -6,7 +6,7 @@
 /*   By: klukiano <klukiano@student.hive.fi>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/01/16 13:23:45 by klukiano          #+#    #+#             */
-/*   Updated: 2024/01/18 13:44:05 by klukiano         ###   ########.fr       */
+/*   Updated: 2024/01/18 18:45:49 by klukiano         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -15,13 +15,19 @@
 #include "../lib/ft_printf/ft_printf.h"
 #include "../lib/get_next_line/get_next_line.h"
 #include "../lib/MLX42/include/MLX42/MLX42.h"
+#include "../lib/MLX42/include/MLX42/MLX42_Int.h"
 #include "../include/fdf.h"
 #include <fcntl.h>
 
-t_list	*fdf_reader(int fd, char **av);
+// #define WIDTH 1024
+// #define HEIGHT 768
+
+t_list	*fdf_reader(int fd);
 int		check_and_del_newline(char *l);
 int		is_cell_colored(char *str);
 int		is_valid_hex(char *str);
+static void ft_hook(void* param);
+void	draw_and_move(t_list **map);
 
 int	main(int ac, char **av)
 {
@@ -34,42 +40,105 @@ int	main(int ac, char **av)
 		fd = open(av[1], O_RDONLY);
 		if (fd == -1)
 			return (1);
-		map = fdf_reader(fd, av);
+		map = fdf_reader(fd);
 		if (!map)
 			return (1);
-		// draw_and_move(&map);
-
+		draw_and_move(&map);
 		while (map)
 		{
 			i = 0;
 			while (i < map->width)
 			{
 				if (map->int_array[i][1] != -1)
-					ft_printf("%i, %i ", map->int_array[i][0], map->int_array[i][1]);
+					ft_printf("%i, %x ", map->int_array[i][0], map->int_array[i][1]);
 				else
 					ft_printf("%i [ ] ", map->int_array[i][0]);
 				i ++;
 			}
 			ft_printf("\n");
+			//very strange thing, printf breaks if i mix my printf with the system one
 			map = map->next;
 		}
 	}
-	return (0);
+	return (EXIT_SUCCESS);
 }
 
-// void	draw_and_move(t_list **map)
-// {
-// 	mlx_t *mlx_file;
+void	draw_and_move(t_list **map)
+{
+	mlx_t *mlx;
 
-// 	mlx_file = mlx_init((*map)->width, )
-// 	if (ml)
+	mlx_set_setting(MLX_STRETCH_IMAGE, true);
+
+	mlx = mlx_init((*map)->width * 100, (*map)->height * 100, "test_name", 1);
+	if (!mlx)
+	{
+		ft_lstclear(map, free);
+		//ft_printf(stderr, "%s", mlx_strerror(mlx_errno));
+		exit(EXIT_FAILURE);
+	}
+	mlx_image_t* img = mlx_new_image(mlx, (*map)->width * 100, (*map)->height * 100);
+	if (!img || (mlx_image_to_window(mlx, img, 0, 0) < 0))
+	{
+		ft_lstclear(map, free);
+		//ft_printf(stderr, "%s", mlx_strerror(mlx_errno));
+		exit(EXIT_FAILURE);
+	}
+
+	t_list *ptr;
+
+	int i = 0;
+	int x = 0;
+	int y = 0;
+	int f = 0;
+	ptr = *map;
+	while (ptr)
+	{
+		i = 0;
+		while (i < (*map)->width)
+		{
+			x = 0;
+			while (x <= 50 * (*map)->width)
+			{
+				mlx_put_pixel(img, x, y, (*map)->int_array[i][1]);
+				x ++;
+			}
+			//x += 100;
+			i ++;
+		}
+		ptr = ptr->next;
+		i ++;
+		// while (f < (*map)->height)
+		// {
+
+		// }
+		y += 100;
+	}
+	// mlx_put_pixel(img, 150, 150, 0xAF0000FF);
+	// mlx_put_pixel(img, 300, 300, 0xFF0000FF);
+
+	// Register a hook and pass mlx as an optional param.
+	// NOTE: Do this before calling mlx_loop!
+
+	mlx_loop_hook(mlx, ft_hook, mlx);
+	mlx_loop(mlx);
+	mlx_terminate(mlx);
+	ft_printf("\n");
+}
+
+static void ft_hook(void* param)
+{
+
+	const mlx_t* mlx = param;
+
+	(void)mlx;
+
+	//ft_printf("WIDTH: %d | HEIGHT: %d\n", mlx->width, mlx->height);
+	ft_printf("hooking....");
+}
 
 
-// }
 
-
-
-t_list	*fdf_reader(int fd, char **av)
+t_list	*fdf_reader(int fd)
 {
 	//t_list	*map;
 	t_list	*line_list;
@@ -77,11 +146,11 @@ t_list	*fdf_reader(int fd, char **av)
 	//char	*temp;
 	//char	*big_line;
 	//int		is_error;
-	char	**split_str;
+	//char	**split_str;
 	int		i;
 	int 	j;
 	t_list	*ptr;
-	int		bytes;
+	//int		bytes;
 
 	i = 0;
 	line_list = ft_lstnew(NULL);
@@ -249,6 +318,7 @@ int	is_cell_colored(char *str)
 {
 	int i;
 
+	i = 0;
 	while (str[i])
 	{
 		if (str[i] == ',')
