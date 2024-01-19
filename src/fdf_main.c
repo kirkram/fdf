@@ -6,7 +6,7 @@
 /*   By: klukiano <klukiano@student.hive.fi>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/01/16 13:23:45 by klukiano          #+#    #+#             */
-/*   Updated: 2024/01/19 13:53:30 by klukiano         ###   ########.fr       */
+/*   Updated: 2024/01/19 17:26:41 by klukiano         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -20,6 +20,8 @@
 #include <math.h>
 #include <fcntl.h>
 
+#define PI 3.14159265358979323846
+
 // #define WIDTH 1024
 // #define HEIGHT 768
 
@@ -30,6 +32,7 @@ int		is_valid_hex(char *str);
 static void ft_hook(void* param);
 void	draw_and_move(t_list **map);
 void	draw_line(mlx_image_t *img, double x, double y, double x_dest, double y_dest);
+void	rotation_iso(double *x, double *y);
 
 int	main(int ac, char **av)
 {
@@ -46,21 +49,22 @@ int	main(int ac, char **av)
 		if (!map)
 			return (1);
 		draw_and_move(&map);
-		while (map)
-		{
-			i = 0;
-			while (i < map->width)
-			{
-				if (map->int_array[i][1] != -1)
-					ft_printf("%i, %x ", map->int_array[i][0], map->int_array[i][1]);
-				else
-					ft_printf("%i [ ] ", map->int_array[i][0]);
-				i ++;
-			}
-			ft_printf("\n");
-			//very strange thing, printf breaks if i mix my printf with the system one
-			map = map->next;
-		}
+		// while (map)
+		// {
+		// 	i = 0;
+		// 	while (i < map->width)
+		// 	{
+		// 		if (map->int_array[i][1] != -1)
+		// 			ft_printf("%i, %x ", map->int_array[i][0], map->int_array[i][1]);
+		// 		else
+		// 			ft_printf("%i [ ] ", map->int_array[i][0]);
+		// 		i ++;
+		// 	}
+		// 	ft_printf("\n");
+
+		// 	////very strange thing, printf breaks if i mix my printf with the system one
+		// 	map = map->next;
+		// }
 	}
 	ft_lstclear(&map, free);
 	return (EXIT_SUCCESS);
@@ -69,6 +73,7 @@ int	main(int ac, char **av)
 void	draw_and_move(t_list **map)
 {
 	mlx_t *mlx;
+	t_list *ptr;
 
 	//mlx_set_setting(MLX_STRETCH_IMAGE, true);
 
@@ -76,18 +81,46 @@ void	draw_and_move(t_list **map)
 
 	// turn into proper calculation
 	if ((*map)->width < 200 || (*map)->height < 200)
-		scale = 75;
+		scale = 25;
 	else
-		scale = 3;
+		scale = 2;
 
-	mlx = mlx_init((*map)->width * scale * 2, (*map)->height * scale * 2, "test_name", 1);
+	double		shift;
+	double x_coord = 0;
+	double y_coord = 0;
+	double	x_dest = 0;
+	double	y_dest = 0;
+
+	shift = 100;
+	// ptr = *map;
+	//
+	// while (ptr->next)
+	// {
+	// 	i ++;
+	// 	ptr = ptr->next;
+	// }
+	// x_coord = j * width_line;
+	// y_coord = i * height_line;
+	// rotation_iso(&x_coord, &y_coord);
+
+	// x_dest = (j + 1) * width_line;
+	// y_dest = (i + 1) * height_line;
+	// rotation_iso(&x_dest, &y_dest);
+	// ft_printf("the x is %d, the y is %d, the xdest is %d, the ydest is %d\n", x_coord, y_coord, x_dest, y_dest);
+	// return ;
+
+	mlx = mlx_init(((*map)->width * scale + shift + 100) , ((*map)->height * scale + shift + 100), "test_name", 1);
 	if (!mlx)
 	{
 		ft_lstclear(map, free);
 		//ft_printf(stderr, "%s", mlx_strerror(mlx_errno));
 		exit(EXIT_FAILURE);
 	}
-	mlx_image_t* img = mlx_new_image(mlx, (*map)->width * scale, (*map)->height * scale);
+
+
+	mlx_image_t* img = mlx_new_image(mlx, (*map)->width * scale + shift + 100, (*map)->height * scale + shift + 100);
+
+	//int		shift_amount = 5 * scale;
 	if (!img || (mlx_image_to_window(mlx, img, 0, 0) < 0))
 	{
 		ft_lstclear(map, free);
@@ -95,39 +128,35 @@ void	draw_and_move(t_list **map)
 		exit(EXIT_FAILURE);
 	}
 
-	t_list *ptr;
+	double width_line = img->width / (*map)->width;
+	double height_line = img->height / (*map)->height;
 
-	int i = 0;
 	int x = 0;
 	int y = 0;
 	int f = 0;
-	double width_line = img->width / (*map)->width;
-	double height_line = img->height / (*map)->height;
-	double x_coord = 0;
-	double y_coord = 0;
-	double	x_dest = 0;
-	double	y_dest = 0;
-	int		rotation = 0;
-	int		shift_amount = 0;
 	int	j = 0;
+	int i = 0;
 	ptr = *map;
-
+	//shift the picture to the right by the max amount so that aftter x - y in rotation iso we alwyas have a positive number
 	while (ptr)
 	{
-		x_coord = 0 + shift_amount;
+		//x_coord = 0 ;
 		j = 0;
 		while (j < (*map)->width)
 		{
-			x_coord = j * width_line + rotation;
-			y_coord = i * height_line + rotation;
-			x_dest = (j + 1) * width_line + rotation;
-			y_dest = (i + 1)* height_line + rotation;
+			x_coord = j * width_line;
+			y_coord = i * height_line;
+			rotation_iso(&x_coord, &y_coord);
+
+			x_dest = (j + 1) * width_line;
+			y_dest = (i + 1) * height_line;
+			rotation_iso(&x_dest, &y_dest);
 			if (j + 1 < (*map)->width)
 			{
-				draw_line (img, x_coord, y_coord, x_dest, y_coord);
+				draw_line (img, x_coord + shift, y_coord + shift, x_dest + shift, y_coord + shift);
 			}
-			if (ptr->next)
-				draw_line (img, x_coord, y_coord, x_coord, y_dest);
+			//if (ptr->next)
+			//	draw_line (img, x_coord + shift, y_coord + shift, x_coord + shift, y_dest + shift);
 			j ++;
 		}
 		ptr = ptr->next;
@@ -146,16 +175,34 @@ void	draw_and_move(t_list **map)
 	ft_printf("\n");
 }
 
+void	rotation_iso(double *x, double *y)
+{
+	*x = (*x - *y) * cos( 45 * (PI / 180.0));
+	*y = (*x + *y) * sin( 30 * (PI / 180.0)) * -1;
+	return ;
+}
+
 void	draw_line(mlx_image_t *img, double x, double y, double x_dest, double y_dest)
 {
 
+	//consider implementing Bersenham or even Wu
+
 	double dx = x_dest - x;
-    double dy = y_dest - y;
-    double steps = fmax(fabs(dx), fabs(dy)); // Use fabs for floating-point absolute value
+	double dy = y_dest - y;
+	double steps = fmax(fabs(dx), fabs(dy)); // use fabs for floating-point absolute value
 
-    double x_inc = dx / steps;
-    double y_inc = dy / steps;
-
+	double x_inc ;
+	double y_inc;
+	if (steps)
+	{
+		x_inc = dx / steps;
+		y_inc = dy / steps;
+	}
+	else
+	{
+		x_inc = 0;
+		y_inc = 0;
+	}
 	uint32_t x_int;
 	uint32_t y_int;
 	int i = 0;
@@ -164,7 +211,7 @@ void	draw_line(mlx_image_t *img, double x, double y, double x_dest, double y_des
 		x_int = (uint32_t)round(x);
 		y_int = (uint32_t)round(y);
 
-		mlx_put_pixel(img, x_int, y_int, 0xFFFFFF99); // Use the rounded and casted values here
+		mlx_put_pixel(img, x_int, y_int, 0xFFFFFF99); // use the rounded and casted values here
 		x += x_inc;
 		y += y_inc;
 		i ++;
