@@ -6,7 +6,7 @@
 /*   By: klukiano <klukiano@student.hive.fi>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/01/16 13:23:45 by klukiano          #+#    #+#             */
-/*   Updated: 2024/01/18 18:45:49 by klukiano         ###   ########.fr       */
+/*   Updated: 2024/01/19 13:53:30 by klukiano         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -17,6 +17,7 @@
 #include "../lib/MLX42/include/MLX42/MLX42.h"
 #include "../lib/MLX42/include/MLX42/MLX42_Int.h"
 #include "../include/fdf.h"
+#include <math.h>
 #include <fcntl.h>
 
 // #define WIDTH 1024
@@ -28,6 +29,7 @@ int		is_cell_colored(char *str);
 int		is_valid_hex(char *str);
 static void ft_hook(void* param);
 void	draw_and_move(t_list **map);
+void	draw_line(mlx_image_t *img, double x, double y, double x_dest, double y_dest);
 
 int	main(int ac, char **av)
 {
@@ -60,6 +62,7 @@ int	main(int ac, char **av)
 			map = map->next;
 		}
 	}
+	ft_lstclear(&map, free);
 	return (EXIT_SUCCESS);
 }
 
@@ -67,16 +70,24 @@ void	draw_and_move(t_list **map)
 {
 	mlx_t *mlx;
 
-	mlx_set_setting(MLX_STRETCH_IMAGE, true);
+	//mlx_set_setting(MLX_STRETCH_IMAGE, true);
 
-	mlx = mlx_init((*map)->width * 100, (*map)->height * 100, "test_name", 1);
+	double		scale;
+
+	// turn into proper calculation
+	if ((*map)->width < 200 || (*map)->height < 200)
+		scale = 75;
+	else
+		scale = 3;
+
+	mlx = mlx_init((*map)->width * scale * 2, (*map)->height * scale * 2, "test_name", 1);
 	if (!mlx)
 	{
 		ft_lstclear(map, free);
 		//ft_printf(stderr, "%s", mlx_strerror(mlx_errno));
 		exit(EXIT_FAILURE);
 	}
-	mlx_image_t* img = mlx_new_image(mlx, (*map)->width * 100, (*map)->height * 100);
+	mlx_image_t* img = mlx_new_image(mlx, (*map)->width * scale, (*map)->height * scale);
 	if (!img || (mlx_image_to_window(mlx, img, 0, 0) < 0))
 	{
 		ft_lstclear(map, free);
@@ -90,29 +101,39 @@ void	draw_and_move(t_list **map)
 	int x = 0;
 	int y = 0;
 	int f = 0;
+	double width_line = img->width / (*map)->width;
+	double height_line = img->height / (*map)->height;
+	double x_coord = 0;
+	double y_coord = 0;
+	double	x_dest = 0;
+	double	y_dest = 0;
+	int		rotation = 0;
+	int		shift_amount = 0;
+	int	j = 0;
 	ptr = *map;
+
 	while (ptr)
 	{
-		i = 0;
-		while (i < (*map)->width)
+		x_coord = 0 + shift_amount;
+		j = 0;
+		while (j < (*map)->width)
 		{
-			x = 0;
-			while (x <= 50 * (*map)->width)
+			x_coord = j * width_line + rotation;
+			y_coord = i * height_line + rotation;
+			x_dest = (j + 1) * width_line + rotation;
+			y_dest = (i + 1)* height_line + rotation;
+			if (j + 1 < (*map)->width)
 			{
-				mlx_put_pixel(img, x, y, (*map)->int_array[i][1]);
-				x ++;
+				draw_line (img, x_coord, y_coord, x_dest, y_coord);
 			}
-			//x += 100;
-			i ++;
+			if (ptr->next)
+				draw_line (img, x_coord, y_coord, x_coord, y_dest);
+			j ++;
 		}
 		ptr = ptr->next;
 		i ++;
-		// while (f < (*map)->height)
-		// {
-
-		// }
-		y += 100;
 	}
+
 	// mlx_put_pixel(img, 150, 150, 0xAF0000FF);
 	// mlx_put_pixel(img, 300, 300, 0xFF0000FF);
 
@@ -123,6 +144,34 @@ void	draw_and_move(t_list **map)
 	mlx_loop(mlx);
 	mlx_terminate(mlx);
 	ft_printf("\n");
+}
+
+void	draw_line(mlx_image_t *img, double x, double y, double x_dest, double y_dest)
+{
+
+	double dx = x_dest - x;
+    double dy = y_dest - y;
+    double steps = fmax(fabs(dx), fabs(dy)); // Use fabs for floating-point absolute value
+
+    double x_inc = dx / steps;
+    double y_inc = dy / steps;
+
+	uint32_t x_int;
+	uint32_t y_int;
+	int i = 0;
+	while (i < steps)
+	{
+		x_int = (uint32_t)round(x);
+		y_int = (uint32_t)round(y);
+
+		mlx_put_pixel(img, x_int, y_int, 0xFFFFFF99); // Use the rounded and casted values here
+		x += x_inc;
+		y += y_inc;
+		i ++;
+	}
+
+	//find out the smallest step??
+	//
 }
 
 static void ft_hook(void* param)
@@ -268,7 +317,7 @@ t_list	*fdf_reader(int fd)
 
 	ptr = line_list;
 	i = ptr->width;
-	amount = 1;
+	amount = 0;
 	while (ptr)
 	{
 		if (i != ptr->width)
