@@ -6,7 +6,7 @@
 /*   By: klukiano <klukiano@student.hive.fi>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/01/16 13:23:45 by klukiano          #+#    #+#             */
-/*   Updated: 2024/01/19 17:26:41 by klukiano         ###   ########.fr       */
+/*   Updated: 2024/01/23 19:37:09 by klukiano         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -22,17 +22,24 @@
 
 #define PI 3.14159265358979323846
 
-// #define WIDTH 1024
-// #define HEIGHT 768
-
 t_list	*fdf_reader(int fd);
 int		check_and_del_newline(char *l);
 int		is_cell_colored(char *str);
 int		is_valid_hex(char *str);
-static void ft_hook(void* param);
-void	draw_and_move(t_list **map);
-void	draw_line(mlx_image_t *img, double x, double y, double x_dest, double y_dest);
-void	rotation_iso(double *x, double *y);
+static	void ft_hook(void* param);
+t_list	*ft_pointnew(void *content);
+void	draw_and_move_00(t_list **map);
+
+void	init_and_draw(t_list **map);
+void	draw_map(t_list **map, t_data *img);
+t_point	new_p(int x, int y, t_list *map, t_data *img);
+void	drw_line(t_point point, t_point dest, t_data *img);
+int		ft_abs(int result);
+void	vector_find_sign(t_point point, t_point dest, t_point *sign);
+t_point	apply_camera(t_point point, t_data *img);
+void	zoom_calc(t_list *map, t_data *img);
+t_data	*init_window(t_data *img, t_list **map);
+t_point	rotation_iso(t_point point);
 
 int	main(int ac, char **av)
 {
@@ -48,7 +55,7 @@ int	main(int ac, char **av)
 		map = fdf_reader(fd);
 		if (!map)
 			return (1);
-		draw_and_move(&map);
+		init_and_draw(&map);
 		// while (map)
 		// {
 		// 	i = 0;
@@ -61,164 +68,178 @@ int	main(int ac, char **av)
 		// 		i ++;
 		// 	}
 		// 	ft_printf("\n");
-
-		// 	////very strange thing, printf breaks if i mix my printf with the system one
-		// 	map = map->next;
-		// }
 	}
 	ft_lstclear(&map, free);
 	return (EXIT_SUCCESS);
 }
 
-void	draw_and_move(t_list **map)
+void	init_and_draw(t_list **map)
 {
-	mlx_t *mlx;
-	t_list *ptr;
+	t_data	*img;
 
-	//mlx_set_setting(MLX_STRETCH_IMAGE, true);
-
-	double		scale;
-
-	// turn into proper calculation
-	if ((*map)->width < 200 || (*map)->height < 200)
-		scale = 25;
-	else
-		scale = 2;
-
-	double		shift;
-	double x_coord = 0;
-	double y_coord = 0;
-	double	x_dest = 0;
-	double	y_dest = 0;
-
-	shift = 100;
-	// ptr = *map;
-	//
-	// while (ptr->next)
-	// {
-	// 	i ++;
-	// 	ptr = ptr->next;
-	// }
-	// x_coord = j * width_line;
-	// y_coord = i * height_line;
-	// rotation_iso(&x_coord, &y_coord);
-
-	// x_dest = (j + 1) * width_line;
-	// y_dest = (i + 1) * height_line;
-	// rotation_iso(&x_dest, &y_dest);
-	// ft_printf("the x is %d, the y is %d, the xdest is %d, the ydest is %d\n", x_coord, y_coord, x_dest, y_dest);
-	// return ;
-
-	mlx = mlx_init(((*map)->width * scale + shift + 100) , ((*map)->height * scale + shift + 100), "test_name", 1);
-	if (!mlx)
+	img = malloc(sizeof(t_data));
+	zoom_calc(*map, img);
+	img = init_window(img, map);
+	if (!img || (mlx_image_to_window(img->mlx, img->img, 0, 0) < 0))
 	{
+		free (img);
 		ft_lstclear(map, free);
-		//ft_printf(stderr, "%s", mlx_strerror(mlx_errno));
-		exit(EXIT_FAILURE);
+		return ;
 	}
-
-
-	mlx_image_t* img = mlx_new_image(mlx, (*map)->width * scale + shift + 100, (*map)->height * scale + shift + 100);
-
-	//int		shift_amount = 5 * scale;
-	if (!img || (mlx_image_to_window(mlx, img, 0, 0) < 0))
-	{
-		ft_lstclear(map, free);
-		//ft_printf(stderr, "%s", mlx_strerror(mlx_errno));
-		exit(EXIT_FAILURE);
-	}
-
-	double width_line = img->width / (*map)->width;
-	double height_line = img->height / (*map)->height;
-
-	int x = 0;
-	int y = 0;
-	int f = 0;
-	int	j = 0;
-	int i = 0;
-	ptr = *map;
-	//shift the picture to the right by the max amount so that aftter x - y in rotation iso we alwyas have a positive number
-	while (ptr)
-	{
-		//x_coord = 0 ;
-		j = 0;
-		while (j < (*map)->width)
-		{
-			x_coord = j * width_line;
-			y_coord = i * height_line;
-			rotation_iso(&x_coord, &y_coord);
-
-			x_dest = (j + 1) * width_line;
-			y_dest = (i + 1) * height_line;
-			rotation_iso(&x_dest, &y_dest);
-			if (j + 1 < (*map)->width)
-			{
-				draw_line (img, x_coord + shift, y_coord + shift, x_dest + shift, y_coord + shift);
-			}
-			//if (ptr->next)
-			//	draw_line (img, x_coord + shift, y_coord + shift, x_coord + shift, y_dest + shift);
-			j ++;
-		}
-		ptr = ptr->next;
-		i ++;
-	}
-
-	// mlx_put_pixel(img, 150, 150, 0xAF0000FF);
-	// mlx_put_pixel(img, 300, 300, 0xFF0000FF);
-
-	// Register a hook and pass mlx as an optional param.
-	// NOTE: Do this before calling mlx_loop!
-
-	mlx_loop_hook(mlx, ft_hook, mlx);
-	mlx_loop(mlx);
-	mlx_terminate(mlx);
+	draw_map(map, img);
+	mlx_loop_hook(img->mlx, ft_hook, NULL);
+	mlx_loop(img->mlx);
+	mlx_terminate(img->mlx);
 	ft_printf("\n");
 }
 
-void	rotation_iso(double *x, double *y)
+void	draw_map(t_list **map, t_data *img)
 {
-	*x = (*x - *y) * cos( 45 * (PI / 180.0));
-	*y = (*x + *y) * sin( 30 * (PI / 180.0)) * -1;
-	return ;
+	t_point	dest;
+	t_list	*ptr;
+	int		x;
+	int		y;
+
+	ptr = *map;
+	while (ptr)
+	{
+		x = 0;
+		while (x < ptr->width)
+		{
+			y = ptr->curr_pos;
+			if (x < ptr->width - 1)
+				drw_line(new_p(x, y, ptr, img), new_p(x + 1, y, ptr, img), img);
+			if (y < ptr->height - 1)
+				drw_line(new_p(x, y, ptr, img), new_p(x, y + 1, ptr, img), img);
+			x ++;
+		}
+		ptr = ptr->next;
+	}
 }
 
-void	draw_line(mlx_image_t *img, double x, double y, double x_dest, double y_dest)
+t_point	new_p(int x, int y, t_list *map, t_data *img)
 {
+	t_point	point;
 
-	//consider implementing Bersenham or even Wu
+	point.x = x;
+	point.y = y;
+	point.z = map->int_array[x][0];
+	point.color = map->int_array[x][1];
+	point = apply_camera(point, img);
+	//add rotation option - rotate around x or y or z
+	if (img->mode == ISO)
+		point = rotation_iso(point);
+	//somehow axel didnt shift the z and it was fine, let's try like this
+	point.x += img->width / 4;
+	point.y += img->height / 4;
+	return (point);
+}
 
-	double dx = x_dest - x;
-	double dy = y_dest - y;
-	double steps = fmax(fabs(dx), fabs(dy)); // use fabs for floating-point absolute value
+void	drw_line(t_point point, t_point dest, t_data *img)
+{
+	//implement bresenham from the chat convo
+	t_point	delta;
+	t_point	sign;
+	int		error;
+	int		error_2;
 
-	double x_inc ;
-	double y_inc;
-	if (steps)
+	delta.x = ft_abs(dest.x - point.x);
+	delta.y = ft_abs(dest.y - point.y);
+	vector_find_sign(point, dest, &sign);
+	error = delta.x - delta.y;
+	//where is the check for the bounds of the image?
+	while (point.x != dest.x && point.y != dest.y)
 	{
-		x_inc = dx / steps;
-		y_inc = dy / steps;
+		if (point.x < img->width && point.y < img->height && point.x && point.y)
+			mlx_put_pixel(img->img, point.x, point.y, point.color);
+		error_2 = error * 2;
+		if (error_2 > -delta.y)
+			error -= delta.y;
+		if (error_2 > -delta.y)
+			point.x += sign.x; //increment + or -1
+		if (error_2 < delta.x)
+			error += delta.x;
+		if (error_2 < delta.x)
+			point.y += sign.y;  //increment + or -1
 	}
+	//do i need to draw another pixel?
+}
+
+int	ft_abs(int result)
+{
+	if (result < 0)
+		result = -result;
+	return (result);
+}
+
+void	vector_find_sign(t_point point, t_point dest, t_point *sign)
+{
+	if (point.x < dest.x)
+		sign->x = 1;
 	else
-	{
-		x_inc = 0;
-		y_inc = 0;
-	}
-	uint32_t x_int;
-	uint32_t y_int;
-	int i = 0;
-	while (i < steps)
-	{
-		x_int = (uint32_t)round(x);
-		y_int = (uint32_t)round(y);
+		sign->x = -1;
+	if (point.y < dest.y)
+		sign->y = 1;
+	else
+		sign->y = -1;
+}
 
-		mlx_put_pixel(img, x_int, y_int, 0xFFFFFF99); // use the rounded and casted values here
-		x += x_inc;
-		y += y_inc;
-		i ++;
-	}
+t_point	apply_camera(t_point point, t_data *img)
+{
+	//some problem with int
+	point.x *= img->zoom;
+	point.y *= img->zoom;
+	point.z *= img->zoom;
+	return (point);
+}
 
-	//find out the smallest step??
-	//
+void	zoom_calc(t_list *map, t_data *img)
+{
+	double	scale_w;
+	double	scale_h;
+	int		width;
+	int		height;
+
+	width = map->width;
+	height = map->height;
+	scale_w = TRGT_W / width;
+	scale_h = TRGT_H / height;
+	if (fabs(TRGT_H - width * scale_h) <= fabs(TRGT_W - height * scale_w))
+		img->zoom = scale_h;
+	else
+		img->zoom = scale_w;
+}
+
+t_data	*init_window(t_data *img, t_list **map)
+{
+	img->width = (uint32_t)round((*map)->width * img->zoom);
+	img->height = (uint32_t)round((*map)->height * img->zoom);
+
+	img->mlx = mlx_init(img->width, img->height, "FDF", 1);
+	if (!img->mlx)
+		return(NULL);
+	img->img = mlx_new_image(img->mlx, img->width, img->height);
+	if (!img->img)
+		return (NULL);
+	// img->line_len_w = img->width / (*map)->width;
+	// img->line_len_h = img->height / (*map)->height;
+	img->mode = ISO;
+
+	return (img);
+}
+
+t_point	rotation_iso(t_point point)
+{
+	//radian of angle 45 is 45 * (PI / 180.0) = 0.78539816339
+	//radian of anglle 30 is 30 * (PI / 180.0) = 0.52359877559
+	//left hand rotation is cos sin for x -sin cos for y
+	point.x = point.x * cos(0.78539816339) + point.y * sin(0.78539816339);
+	point.y = point.y * cos(0.78539816339) - point.x * sin(0.78539816339);
+	//then apply Rx 30
+	point.y = point.y * cos(0.52359877559) + point.z * sin(0.52359877559);
+	point.z = point.z * cos(0.52359877559) - point.y * sin(0.52359877559);
+
+	return (point);
 }
 
 static void ft_hook(void* param)
@@ -233,20 +254,12 @@ static void ft_hook(void* param)
 }
 
 
-
 t_list	*fdf_reader(int fd)
 {
-	//t_list	*map;
 	t_list	*line_list;
-	//char	*line;
-	//char	*temp;
-	//char	*big_line;
-	//int		is_error;
-	//char	**split_str;
 	int		i;
 	int 	j;
 	t_list	*ptr;
-	//int		bytes;
 
 	i = 0;
 	line_list = ft_lstnew(NULL);
@@ -295,22 +308,6 @@ t_list	*fdf_reader(int fd)
 		ptr = ptr->next;
 	}
 
-	// count the amount of cells and if it has ',' then add + 1 each time
-	// ptr = line_list;
-	// i = 0;
-	// while (ptr)
-	// {
-	// 	j = 0;
-	// 	while (ptr->cells[j])
-	// 	{
-	// 		i ++;
-	// 		j ++;
-	// 	}
-	// 	ptr = ptr->next;
-	// }
-	// i = i * 2;
-	// ft_printf("The amount of cells times two is %d\n", i);
-	// convert the cells to numbers
 
 	ptr = line_list;
 	i = 0;
@@ -343,8 +340,9 @@ t_list	*fdf_reader(int fd)
 				}
 				ptr->int_array[i][1] = ft_atoi_base(ptr->cells[i] + j + 1, 16);
 			}
+			//THE COLOR IS HERE
 			else
-				ptr->int_array[i][1] = -1;
+				ptr->int_array[i][1] = 0xFFFFFF;
 			ptr->int_array[i][0] = ft_atoi(ptr->cells[i]);
 			//worth a whole function this check?
 			if (ptr->int_array[i][0] == 0 && ptr->cells[i][0] != '0')
@@ -363,16 +361,18 @@ t_list	*fdf_reader(int fd)
 	}
 
 	ptr = line_list;
-	i = ptr->width;
+	int	first_line_width = ptr->width;
 	amount = 0;
+	ptr->curr_pos = -1;
 	while (ptr)
 	{
-		if (i != ptr->width)
+		if (first_line_width != ptr->width)
 		{
 			ft_lstclear(&line_list, free);
 			ft_printf("THE WIDTH IS DIFFERENT\n");
 			return (NULL);
 		}
+		ptr->curr_pos += 1;
 		amount ++;
 		ptr = ptr->next;
 	}

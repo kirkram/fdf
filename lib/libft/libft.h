@@ -6,7 +6,7 @@
 /*   By: klukiano <klukiano@student.hive.fi>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/11/03 12:31:10 by klukiano@st       #+#    #+#             */
-/*   Updated: 2024/01/18 13:31:19 by klukiano         ###   ########.fr       */
+/*   Updated: 2024/01/22 15:58:48 by klukiano         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -59,6 +59,7 @@ typedef struct s_list
 	int				amount;
 	int				width;
 	int				height;
+	int				curr_pos;
 	void			*content;
 	struct s_list	*next;
 }					t_list;
