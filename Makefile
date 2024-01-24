@@ -9,7 +9,7 @@ HEADERS	= -I ./include -I ./lib/MLX42/include/ -I ./lib/get_next_line/ -I "/User
 #EXTRA FLAGS CFLAGS	:= -Wunreachable-code -Ofast
 DEBUGFLAGS = -g -fsanitize=address,undefined,integer
 LIBS	= ./lib/MLX42/build/libmlx42.a -L/Users/klukiano/.brew/lib/ -lglfw -framework Cocoa -framework OpenGL -framework IOKit
-SRCS = ./src/fdf_main.c ./src/helper_functions.c ./src/ft_atoi_base.c
+SRCS = ./src/fdf_main.c ./src/helper_functions.c ./src/ft_atoi_base.c ./src/fdf_reader.c
 GNL_SRCS = ./lib/get_next_line/get_next_line_utils.c ./lib/get_next_line/get_next_line.c
 PRINTF_SRCS = ./lib/ft_printf/ft_printf.c ./lib/ft_printf/ft_putchar.c ./lib/ft_printf/ft_putstr.c
 OBJCTS = $(SRCS:.c=.o)
