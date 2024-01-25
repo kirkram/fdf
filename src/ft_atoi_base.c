@@ -6,24 +6,24 @@
 /*   By: klukiano <klukiano@student.hive.fi>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/12/08 15:59:06 by klukiano          #+#    #+#             */
-/*   Updated: 2024/01/18 16:55:22 by klukiano         ###   ########.fr       */
+/*   Updated: 2024/01/25 17:26:41 by klukiano         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "../lib/libft/libft.h"
 
-int		ft_atoi_base(const char *str, int str_base);
+long	ft_atoi_base(const char *str, int str_base);
 int		is_valid_str(char *str, char *set);
 size_t	ft_strlen(const char *str);
 int		convert_to_dec(char character);
-int		make_power(int str_base, int exponent);
+long	make_power(long str_base, long exponent);
 
 
-int	ft_atoi_base(const char *str, int str_base)
+long	ft_atoi_base(const char *str, int str_base)
 {
 	char set[17] = "0123456789abcdef";
 	int sign = 1;
-	int result;
+	long result;
 	int i;
 	int len;
 
@@ -81,9 +81,9 @@ int convert_to_dec(char character)
 	return (i);
 }
 
-int	make_power(int str_base, int exponent)
+long	make_power(long str_base, long exponent)
 {
-	int result;
+	long result;
 
 	if (exponent == 0)
 		return (1);

@@ -6,7 +6,7 @@
 /*   By: klukiano <klukiano@student.hive.fi>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/01/16 13:23:45 by klukiano          #+#    #+#             */
-/*   Updated: 2024/01/24 18:07:58 by klukiano         ###   ########.fr       */
+/*   Updated: 2024/01/25 18:33:31 by klukiano         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -19,8 +19,6 @@
 #include "../include/fdf.h"
 #include <math.h>
 #include <fcntl.h>
-
-#define PI 3.14159265358979323846
 
 t_list	*fdf_reader(int fd);
 int		check_and_del_newline(char *l);
@@ -38,7 +36,7 @@ int		ft_abs(int result);
 void	vector_find_sign(t_point point, t_point dest, t_point *sign);
 t_point	apply_camera(t_point point, t_data *img);
 void	zoom_calc(t_list *map, t_data *img);
-t_data	*init_window(t_data *img, t_list **map);
+t_data	*init_window(t_data *img);
 t_point	rotation_iso(t_point point);
 
 void	draw_line(t_point point, t_point dest, t_data *img);
@@ -49,7 +47,7 @@ int	main(int ac, char **av)
 {
 	t_list	*map;
 	int		fd;
-	int		i;
+	//int		i;
 
 	if (ac == 2)
 	{
@@ -71,7 +69,7 @@ void	init_and_draw(t_list **map)
 
 	img = malloc(sizeof(t_data));
 	zoom_calc(*map, img);
-	img = init_window(img, map);
+	img = init_window(img);
 	if (!img || (mlx_image_to_window(img->mlx, img->img, 0, 0) < 0))
 	{
 		free (img);
@@ -102,11 +100,8 @@ void	zoom_calc(t_list *map, t_data *img)
 		img->zoom = scale_w;
 }
 
-t_data	*init_window(t_data *img, t_list **map)
+t_data	*init_window(t_data *img)
 {
-	//img->width = (uint32_t)round((*map)->width * img->zoom);
-	//img->height = (uint32_t)round((*map)->height * img->zoom);
-
 	img->width = 1920;
 	img->height = 1080;
 
@@ -116,9 +111,6 @@ t_data	*init_window(t_data *img, t_list **map)
 	img->img = mlx_new_image(img->mlx, img->width, img->height);
 	if (!img->img)
 		return (NULL);
-	// img->line_len_w = img->width / (*map)->width;
-	// img->line_len_h = img->height / (*map)->height;
-
 	img->mode = ISO;
 
 	return (img);
@@ -128,17 +120,21 @@ t_point	rotation_iso(t_point point)
 {
 	t_point	temp;
 
-	int angle_x;
-	angle_x = 1;
+	//Rz rotation for 45 i think the ANGL_X and ANGL_Y application is not right as it is
+	float angle_45;
+	float angle_30;
 
-	temp.x = angle_x * point.x * cos(0.78539816339) - point.y * sin(0.78539816339);
-	temp.y = angle_x * point.y * cos(0.78539816339) + point.x * sin(0.78539816339);
+	angle_45 = 45 * (PI / 180);
+	angle_30 = 30 * (PI / 180);
+	temp.x = ANGL_X * point.x * cos(angle_45) - ANGL_Y * point.y * sin(angle_45);
+	temp.y = ANGL_Y * point.y * cos(angle_45) + ANGL_X * point.x * sin(angle_45);
 
 	point.x = temp.x;
  	point.y = temp.y;
 
-	temp.y = angle_x * point.y * cos(0.52359877559) - point.z * sin(0.52359877559);
-	temp.z = angle_x * point.z * cos(0.52359877559) + point.y * sin(0.52359877559);
+	//Rx rotation for 30
+	temp.y = ANGL_Y * point.y * cos(angle_30) - DEPTH * point.z * sin(angle_30);
+	temp.z = DEPTH * point.z * cos(angle_30) + ANGL_Y * point.y * sin(angle_30);
 
 	point.y = temp.y;
 	point.z = temp.z;
@@ -175,17 +171,23 @@ t_point	new_p(int x, int y, t_list *map, t_data *img)
 
 	point.x = x;
 	point.y = y;
-	//it should take z from the next row when looking for dest
 	point.z = map->int_array[x][0];
-	point.color = map->int_array[x][1];
+	//if (map->int_array[x][1] != MAGENTA)
+		point.color = map->int_array[x][1];
+
 	point = apply_camera(point, img);
 	//add rotation option - rotate around x or y or z
 	if (img->mode == ISO)
 		point = rotation_iso(point);
 	//somehow axel didnt shift the z and it was fine, let's try like this
 
-	point.x += img->width / 3;
-	point.y += img->height / 5;
+
+	//it should be shifting to the center by calculating the line length (using zoom)
+	// point.x += map->width * img->zoom * map->width / 2;
+	// point.y += map->height * img->zoom * map->height / 2;
+
+	point.x += img->width / 2.5;
+	point.y += img->height / 4.8;
 	return (point);
 }
 
@@ -194,38 +196,8 @@ t_point	apply_camera(t_point point, t_data *img)
 	//some problem with int
 	point.x *= img->zoom;
 	point.y *= img->zoom;
-	point.z *= img->zoom;
+	point.z *= img->zoom * DEPTH;
 	return (point);
-}
-
-void	draw_line(t_point point, t_point dest, t_data *img)
-{
-
-	double dx = dest.x - point.x;
-    double dy = dest.y - point.y;
-    double steps = fmax(fabs(dx), fabs(dy)); // Use fabs for floating-point absolute value
-
-    double x_inc = dx / steps;
-    double y_inc = dy / steps;
-
-	uint32_t x_int;
-	uint32_t y_int;
-	int i = 0;
-	while (i < steps)
-	{
-		x_int = (uint32_t)round(point.x);
-		y_int = (uint32_t)round(point.y);
-
-		if (point.x < img->width && point.y < img->height && point.x && point.y)
-			mlx_put_pixel(img->img, point.x, point.y, point.color);
-		//mlx_put_pixel(img->img, x_int, y_int, 0xFFFFFF99); // Use the rounded and casted values here
-		point.x += x_inc;
-		point.y += y_inc;
-		i ++;
-	}
-
-	//find out the smallest step??
-	//
 }
 
 
@@ -240,10 +212,8 @@ void	drw_line(t_point point, t_point dest, t_data *img)
 	delta.y = ft_abs(dest.y - point.y);
 	vector_find_sign(point, dest, &sign);
 	error = delta.x - delta.y;
-	//where is the check for the bounds of the image?
 
-	//is it && or || ??
-	while (point.x != dest.x && point.y != dest.y)
+	while (point.x != dest.x || point.y != dest.y)
 	{
 		if (point.x < img->width && point.y < img->height && point.x >= 0 && point.y >= 0)
 			mlx_put_pixel(img->img, point.x, point.y, point.color);
@@ -257,7 +227,8 @@ void	drw_line(t_point point, t_point dest, t_data *img)
 		if (error_2 < delta.x)
 			point.y += sign.y;  //increment + or -1
 	}
-	//mlx_put_pixel(img->img, point.x, point.y, point.color);
+	//if (point.x < img->width && point.y < img->height && point.x >= 0 && point.y >= 0)
+	//	mlx_put_pixel(img->img, point.x, point.y, point.color);
 	//do i need to draw another pixel?
 }
 
@@ -290,3 +261,33 @@ static void ft_hook(void* param)
 	//ft_printf("WIDTH: %d | HEIGHT: %d\n", mlx->width, mlx->height);
 	//ft_printf("hooking....");
 }
+
+
+
+// void	draw_line(t_point point, t_point dest, t_data *img)
+// {
+
+// 	double dx = dest.x - point.x;
+//     double dy = dest.y - point.y;
+//     double steps = fmax(fabs(dx), fabs(dy));
+
+//     double x_inc = dx / steps;
+//     double y_inc = dy / steps;
+
+// 	uint32_t x_int;
+// 	uint32_t y_int;
+// 	int i = 0;
+// 	while (i < steps)
+// 	{
+// 		x_int = (uint32_t)round(point.x);
+// 		y_int = (uint32_t)round(point.y);
+
+// 		if (point.x < img->width && point.y < img->height && point.x && point.y)
+// 			mlx_put_pixel(img->img, point.x, point.y, point.color);
+
+// 		point.x += x_inc;
+// 		point.y += y_inc;
+// 		i ++;
+// 	}
+
+// }

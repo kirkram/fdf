@@ -6,7 +6,7 @@
 /*   By: klukiano <klukiano@student.hive.fi>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/11/03 12:31:10 by klukiano@st       #+#    #+#             */
-/*   Updated: 2024/01/22 15:58:48 by klukiano         ###   ########.fr       */
+/*   Updated: 2024/01/25 18:29:41 by klukiano         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -55,7 +55,7 @@ typedef struct s_list
 {
 	char			*line;
 	char			**cells;
-	int				**int_array;
+	long			**int_array;
 	int				amount;
 	int				width;
 	int				height;
@@ -72,6 +72,6 @@ void	ft_lstadd_back(t_list **lst, t_list *new);
 void	ft_lstdelone(t_list *lst, void (*del)(void*));
 void	ft_lstclear(t_list **lst, void (*del)(void*));
 
-int		free_n_0(int **int_array, char **str_array);
+int		free_n_0(long **int_array, char **str_array);
 
 #endif
