@@ -1,25 +1,25 @@
 /* ************************************************************************** */
 /*                                                                            */
 /*                                                        :::      ::::::::   */
-/*   ft_atoi_base.c                                     :+:      :+:    :+:   */
+/*   ft_atoi_b.c                                        :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
 /*   By: klukiano <klukiano@student.hive.fi>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/12/08 15:59:06 by klukiano          #+#    #+#             */
-/*   Updated: 2024/01/25 17:26:41 by klukiano         ###   ########.fr       */
+/*   Updated: 2024/01/26 12:10:18 by klukiano         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "../lib/libft/libft.h"
 
-long	ft_atoi_base(const char *str, int str_base);
+long	ft_atoi_b(const char *str, int str_base);
 int		is_valid_str(char *str, char *set);
 size_t	ft_strlen(const char *str);
 int		convert_to_dec(char character);
 long	make_power(long str_base, long exponent);
 
 
-long	ft_atoi_base(const char *str, int str_base)
+long	ft_atoi_b(const char *str, int str_base)
 {
 	char set[17] = "0123456789abcdef";
 	int sign = 1;

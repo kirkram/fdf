@@ -6,30 +6,31 @@
 /*   By: klukiano <klukiano@student.hive.fi>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/11/27 17:53:32 by klukiano          #+#    #+#             */
-/*   Updated: 2024/01/17 13:10:26 by klukiano         ###   ########.fr       */
+/*   Updated: 2024/01/26 14:57:56 by klukiano         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "get_next_line.h"
 
-char	*get_next_line(int fd);
+int		get_next_line(char **str, int fd);
 void	handle_buffer(char	**cache, char **buffer, int bytes_read);
-char	*handle_cache(char **cache, int bytes_read, int fd);
-char	*return_line(char ***cache, size_t i);
-char	*handle_read(char **cache, char **buffer, int bytes_read);
+int		handle_cache(char **str, char **cache, int bytes_read, int fd);
+int		return_line(char **str, char ***cache, size_t i);
+int		handle_read(char **cache, char **buffer, int bytes_read);
 
-char	*get_next_line(int fd)
+int	get_next_line(char **str, int fd)
 {
 	static char	*cache;
 	char		*buffer;
 	int			bytes_read;
+	int			read_flag;
 
 	if (BUFFER_SIZE < 0)
 	{
 		if (cache)
 			free (cache);
 		cache = NULL;
-		return (NULL);
+		return (-1);
 	}
 	buffer = malloc((size_t)BUFFER_SIZE + 1);
 	if (!buffer || BUFFER_SIZE < 0)
@@ -37,16 +38,20 @@ char	*get_next_line(int fd)
 		if (cache)
 			free (cache);
 		cache = NULL;
-		return (NULL);
+		return (-1);
 	}
 	bytes_read = read(fd, buffer, BUFFER_SIZE);
-	if (!handle_read(&cache, &buffer, bytes_read))
-		return (NULL);
+	read_flag = handle_read(&cache, &buffer, bytes_read);
+	if (read_flag < 1)
+		return (read_flag);
 	handle_buffer(&cache, &buffer, bytes_read);
-	return (handle_cache(&cache, bytes_read, fd));
+	if (handle_cache(str, &cache, bytes_read, fd) == 0)
+		return (0);
+	else
+		return (-1);
 }
 
-char	*handle_read(char **cache, char **buffer, int bytes_read)
+int		handle_read(char **cache, char **buffer, int bytes_read)
 {
 	if (bytes_read < 0)
 	{
@@ -54,24 +59,24 @@ char	*handle_read(char **cache, char **buffer, int bytes_read)
 			free (*cache);
 		*cache = NULL;
 		free (*buffer);
-		return (NULL);
+		return (-1);
 	}
 	if (bytes_read == 0)
 	{
 		if (!*cache)
 		{
 			free (*buffer);
-			return (NULL);
+			return (0);
 		}
 		if (*cache[0] == '\0')
 		{
 			free (*cache);
 			*cache = NULL;
 			free (*buffer);
-			return (NULL);
+			return (0);
 		}
 	}
-	return ("\127\127\127");
+	return (1);
 }
 
 void	handle_buffer(char	**cache, char **buffer, int bytes_read)
@@ -94,7 +99,7 @@ void	handle_buffer(char	**cache, char **buffer, int bytes_read)
 	}
 }
 
-char	*handle_cache(char **cache, int bytes_read, int fd)
+int	handle_cache(char **str, char **cache, int bytes_read, int fd)
 {
 	size_t		i;
 	char		*line;
@@ -114,15 +119,16 @@ char	*handle_cache(char **cache, int bytes_read, int fd)
 		line = ft_substr(*cache, 0, -1);
 		free (*cache);
 		*cache = NULL;
-		return (line);
+		*str = line;
+		return (0);
 	}
 	else if (i == 0)
-		return (get_next_line(fd));
+		return (get_next_line(str, fd));
 	else
-		return (return_line(&cache, i));
+		return (return_line(str, &cache, i));
 }
 
-char	*return_line(char ***cache, size_t i)
+int		return_line(char **str, char ***cache, size_t i)
 {
 	char	*line;
 	char	*tmp_cache;
@@ -132,7 +138,7 @@ char	*return_line(char ***cache, size_t i)
 	{
 		free (**cache);
 		**cache = NULL;
-		return (NULL);
+		return (-1);
 	}
 	tmp_cache = ft_substr(**cache, i, -1);
 	if (!tmp_cache)
@@ -140,9 +146,10 @@ char	*return_line(char ***cache, size_t i)
 		free (**cache);
 		**cache = NULL;
 		free (line);
-		return (NULL);
+		return (-1);
 	}
 	free (**cache);
 	**cache = tmp_cache;
-	return (line);
+	*str = line;
+	return (0);
 }

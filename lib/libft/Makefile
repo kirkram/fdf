@@ -24,7 +24,7 @@ $(NAME): $(OBJCTS) $(BONUS_OBJCTS) $(BONUS_SRCS)
 %.o: %.c
 	cc $(CFLAGS) -c $< -o $@
 
-# both: $(NAME) bonus
+#both: $(NAME) bonus
 
 clean: 
 	$(RM) $(OBJCTS) $(BONUS_OBJCTS)
