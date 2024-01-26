@@ -6,24 +6,23 @@
 /*   By: klukiano <klukiano@student.hive.fi>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/12/08 15:59:06 by klukiano          #+#    #+#             */
-/*   Updated: 2024/01/26 12:10:18 by klukiano         ###   ########.fr       */
+/*   Updated: 2024/01/26 16:23:19 by klukiano         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "../lib/libft/libft.h"
 
-long	ft_atoi_b(const char *str, int str_base);
+unsigned int	ft_atoi_b(const char *str, int str_base);
 int		is_valid_str(char *str, char *set);
 size_t	ft_strlen(const char *str);
 int		convert_to_dec(char character);
 long	make_power(long str_base, long exponent);
 
 
-long	ft_atoi_b(const char *str, int str_base)
+unsigned int	ft_atoi_b(const char *str, int str_base)
 {
 	char set[17] = "0123456789abcdef";
-	int sign = 1;
-	long result;
+	unsigned int result;
 	int i;
 	int len;
 
@@ -32,15 +31,13 @@ long	ft_atoi_b(const char *str, int str_base)
 	if (!str || str_base == 0 || !is_valid_str((char *)str, set))
 		return (0);
 	i = 0;
-	if (str[0] == '-')
-		sign = -1;
 	len = ft_strlen(str);
 	while (str[i])
 	{
 		result = result + convert_to_dec(str[len - i - 1]) * make_power(str_base, i);
 		i ++;
 	}
-	return (result * sign);
+	return (result);
 }
 
 int	is_valid_str(char *str, char *set)

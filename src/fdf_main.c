@@ -6,7 +6,7 @@
 /*   By: klukiano <klukiano@student.hive.fi>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/01/16 13:23:45 by klukiano          #+#    #+#             */
-/*   Updated: 2024/01/26 14:16:23 by klukiano         ###   ########.fr       */
+/*   Updated: 2024/01/26 15:33:47 by klukiano         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -171,9 +171,9 @@ t_point	new_p(int x, int y, t_list *map, t_data *img)
 
 	point.x = x;
 	point.y = y;
-	point.z = map->int_array[x][0];
+	point.z = map->int_array[x];
 	//if (map->int_array[x][1] != MAGENTA)
-		point.color = map->int_array[x][1];
+	point.color = map->color_array[x];
 
 	point = apply_camera(point, img);
 	//add rotation option - rotate around x or y or z
