@@ -6,7 +6,7 @@
 /*   By: klukiano <klukiano@student.hive.fi>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/01/16 13:23:45 by klukiano          #+#    #+#             */
-/*   Updated: 2024/01/26 15:33:47 by klukiano         ###   ########.fr       */
+/*   Updated: 2024/01/26 21:38:32 by klukiano         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -32,12 +32,13 @@ void	init_and_draw(t_list **map);
 void	draw_map(t_list **map, t_data *img);
 t_point	new_p(int x, int y, t_list *map, t_data *img);
 void	drw_line(t_point point, t_point dest, t_data *img);
-int		ft_abs(int result);
+long	ft_abs(long result);
 void	vector_find_sign(t_point point, t_point dest, t_point *sign);
 t_point	apply_camera(t_point point, t_data *img);
 void	zoom_calc(t_list *map, t_data *img);
 t_data	*init_window(t_data *img);
 t_point	rotation_iso(t_point point);
+unsigned int	gradient_step(t_point point, t_point dest, int line_len, int *colorstep);
 
 void	draw_line(t_point point, t_point dest, t_data *img);
 
@@ -98,6 +99,8 @@ void	zoom_calc(t_list *map, t_data *img)
 		img->zoom = scale_h;
 	else
 		img->zoom = scale_w;
+
+	img->zoom *= ZOOM_AMOUNT;
 }
 
 t_data	*init_window(t_data *img)
@@ -149,18 +152,19 @@ void	draw_map(t_list **map, t_data *img)
 	int		y;
 
 	ptr = *map;
+	y = 0;
 	while (ptr)
 	{
 		x = 0;
 		while (x < ptr->width)
 		{
-			y = ptr->curr_pos;
 			if (x < (*map)->width - 1)
 				drw_line(new_p(x, y, ptr, img), new_p(x + 1, y, ptr, img), img);
 			if (y < (*map)->height - 1)
 				drw_line(new_p(x, y, ptr, img), new_p(x, y + 1, ptr->next, img), img);
 			x ++;
 		}
+		y ++;
 		ptr = ptr->next;
 	}
 }
@@ -200,18 +204,33 @@ t_point	apply_camera(t_point point, t_data *img)
 	return (point);
 }
 
-
 void	drw_line(t_point point, t_point dest, t_data *img)
 {
 	t_point	delta;
 	t_point	sign;
 	int		error;
 	int		error_2;
+	long	color_step;
 
 	delta.x = ft_abs(dest.x - point.x);
 	delta.y = ft_abs(dest.y - point.y);
 	vector_find_sign(point, dest, &sign);
+
+	color_step = ft_abs((long)dest.color - point.color);
+	if (delta.x + delta.y + delta.z != 0)
+		color_step = color_step / (delta.x + delta.y) * sign.color;
 	error = delta.x - delta.y;
+
+	//можно ли его использовать?
+	int line_len = sqrt(delta.x * delta.x + delta.y * delta.y);
+	if (line_len == 0)
+		line_len ++;
+
+	int colorstep[4];
+	colorstep[0] = (get_r(dest.color) - get_r(point.color)) / line_len;
+	colorstep[1] = (get_g(dest.color) - get_g(point.color)) / line_len;
+	colorstep[2] = (get_b(dest.color) - get_b(point.color)) / line_len;
+	colorstep[3] = (get_a(dest.color) - get_a(point.color)) / line_len;
 
 	while (point.x != dest.x || point.y != dest.y)
 	{
@@ -221,18 +240,46 @@ void	drw_line(t_point point, t_point dest, t_data *img)
 		if (error_2 > -delta.y)
 			error -= delta.y;
 		if (error_2 > -delta.y)
+		{
 			point.x += sign.x; //increment + or -1
+			if (color_step)
+				point.color = gradient_step(point, dest, line_len, colorstep);
+		}
 		if (error_2 < delta.x)
 			error += delta.x;
 		if (error_2 < delta.x)
+		{
 			point.y += sign.y;  //increment + or -1
+			if (color_step)
+				point.color = gradient_step(point, dest, line_len, colorstep);
+		}
+
 	}
 	//if (point.x < img->width && point.y < img->height && point.x >= 0 && point.y >= 0)
 	//	mlx_put_pixel(img->img, point.x, point.y, point.color);
 	//do i need to draw another pixel?
 }
 
-int	ft_abs(int result)
+unsigned int	gradient_step(t_point point, t_point dest, int line_len, int *colorstep)
+{
+	long newcolor[4];
+	unsigned int color;
+
+	newcolor[0] = get_r(point.color);
+	newcolor[1] = get_g(point.color);
+	newcolor[2] = get_b(point.color);
+	newcolor[3] = get_a(point.color);
+
+	newcolor[0] += colorstep[0];
+	newcolor[1] += colorstep[1];
+	newcolor[2] += colorstep[2];
+	newcolor[3] += colorstep[3];
+
+	color = newcolor[0] << 24 | newcolor[1] << 16 | newcolor[2] | newcolor[3];
+	return (color);
+}
+
+long ft_abs(long result)
 {
 	if (result < 0)
 		result = -result;
@@ -249,6 +296,10 @@ void	vector_find_sign(t_point point, t_point dest, t_point *sign)
 		sign->y = 1;
 	else
 		sign->y = -1;
+	if (point.color < dest.color)
+		sign->color = 1;
+	else
+		sign->color = -1;
 }
 
 static void ft_hook(void* param)

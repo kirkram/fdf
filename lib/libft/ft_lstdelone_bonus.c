@@ -6,7 +6,7 @@
 /*   By: klukiano <klukiano@student.hive.fi>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/11/07 18:15:02 by klukiano          #+#    #+#             */
-/*   Updated: 2024/01/26 15:31:56 by klukiano         ###   ########.fr       */
+/*   Updated: 2024/01/26 18:34:07 by klukiano         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -19,7 +19,7 @@ void	ft_lstdelone(t_list *lst, void (*del)(void*))
 		return ;
 	if (del)
 		del(lst->line);
-	if (lst->cells || lst->int_array)
-		free_n_0(&(lst->int_array), lst->cells);
+	if (lst->cells || lst->int_array || lst->color_array)
+		free_n_0(lst->int_array, lst->cells, lst->color_array);
 	free(lst);
 }
