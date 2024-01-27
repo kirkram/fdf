@@ -6,7 +6,7 @@
 /*   By: klukiano <klukiano@student.hive.fi>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/11/03 12:31:10 by klukiano@st       #+#    #+#             */
-/*   Updated: 2024/01/26 15:31:26 by klukiano         ###   ########.fr       */
+/*   Updated: 2024/01/27 13:27:59 by klukiano         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -57,6 +57,7 @@ typedef struct s_list
 	char			**cells;
 	int				*int_array;
 	unsigned int	*color_array;
+	int				is_colored;
 	int				amount;
 	int				width;
 	int				height;
@@ -73,6 +74,6 @@ void	ft_lstadd_back(t_list **lst, t_list *new);
 void	ft_lstdelone(t_list *lst, void (*del)(void*));
 void	ft_lstclear(t_list **lst, void (*del)(void*));
 
-int		free_n_0(int **int_array, char **str_array);
+int		free_n_0(int *int_array, char **str_array, unsigned int *color_array);
 
 #endif

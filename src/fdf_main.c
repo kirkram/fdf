@@ -6,7 +6,7 @@
 /*   By: klukiano <klukiano@student.hive.fi>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/01/16 13:23:45 by klukiano          #+#    #+#             */
-/*   Updated: 2024/01/26 21:38:32 by klukiano         ###   ########.fr       */
+/*   Updated: 2024/01/27 16:02:13 by klukiano         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -24,7 +24,7 @@ t_list	*fdf_reader(int fd);
 int		check_and_del_newline(char *l);
 int		is_cell_colored(char *str);
 int		is_valid_hex(char *str);
-static	void ft_hook(void* param);
+void 	ft_hook(void* param);
 t_list	*ft_pointnew(void *content);
 void	draw_and_move_00(t_list **map);
 
@@ -38,7 +38,10 @@ t_point	apply_camera(t_point point, t_data *img);
 void	zoom_calc(t_list *map, t_data *img);
 t_data	*init_window(t_data *img);
 t_point	rotation_iso(t_point point);
-unsigned int	gradient_step(t_point point, t_point dest, int line_len, int *colorstep);
+unsigned int	gradient_step(t_point point, float *colorstep);
+unsigned int height_to_color(t_point point);
+void	my_scrollhook(double xdelta, double ydelta, void* param);
+void my_keyhook(mlx_key_data_t keydata, void* param);
 
 void	draw_line(t_point point, t_point dest, t_data *img);
 
@@ -78,10 +81,60 @@ void	init_and_draw(t_list **map)
 		return ;
 	}
 	draw_map(map, img);
-	mlx_loop_hook(img->mlx, ft_hook, NULL);
+
+	mlx_scroll_hook(img->mlx, my_scrollhook, img);
+	mlx_loop_hook(img->mlx, ft_hook, img);
 	mlx_loop(img->mlx);
+
 	mlx_terminate(img->mlx);
-	ft_printf("\n");
+	free (img);
+}
+
+void my_scrollhook(double xdelta, double ydelta, void* param)
+{
+	// Simple up or down detection.
+	if (ydelta > 0)
+	;
+	else if (ydelta < 0)
+		puts("Down!");
+
+	// Can also detect a mousewheel that goes along the X (e.g: MX Master 3)
+	if (xdelta < 0)
+		puts("Sliiiide to the left!");
+	else if (xdelta > 0)
+		puts("Sliiiide to the right!");
+}
+
+void ft_hook(void* param)
+{
+	t_data *img;
+
+	img = param;
+	mlx_key_hook(img->mlx, my_keyhook, img);
+}
+
+void my_keyhook(mlx_key_data_t keydata, void* param)
+{
+	t_data *img;
+
+	img = param;
+
+	if (keydata.key == MLX_KEY_ESCAPE && keydata.action == MLX_PRESS)
+	{
+		mlx_close_window(img->mlx);
+		return ;
+	}
+	// If we PRESS the 'J' key, print "Hello".
+	if (keydata.key == MLX_KEY_J && keydata.action == MLX_PRESS)
+		puts("Hello ");
+
+	// If we RELEASE the 'K' key, print "World".
+	if (keydata.key == MLX_KEY_K && keydata.action == MLX_RELEASE)
+		puts("World");
+
+	// If we HOLD the 'L' key, print "!".
+	if (keydata.key == MLX_KEY_L && keydata.action == MLX_REPEAT)
+		puts("!");
 }
 
 void	zoom_calc(t_list *map, t_data *img)
@@ -105,8 +158,8 @@ void	zoom_calc(t_list *map, t_data *img)
 
 t_data	*init_window(t_data *img)
 {
-	img->width = 1920;
-	img->height = 1080;
+	img->width = TRGT_W;
+	img->height = TRGT_H;
 
 	img->mlx = mlx_init(img->width, img->height, "FDF", 1);
 	if (!img->mlx)
@@ -145,6 +198,23 @@ t_point	rotation_iso(t_point point)
 	return (point);
 }
 
+void	put_background(t_data *img)
+{
+	int		x;
+	int		y;
+	y = 0;
+	while (y < img->height)
+	{
+		x = 0;
+		while (x < img->width)
+		{
+			mlx_put_pixel(img->img, x, y, 0x000000AA);
+			x ++;
+		}
+		y ++;
+	}
+}
+
 void	draw_map(t_list **map, t_data *img)
 {
 	t_list	*ptr;
@@ -152,6 +222,8 @@ void	draw_map(t_list **map, t_data *img)
 	int		y;
 
 	ptr = *map;
+	put_background(img);
+
 	y = 0;
 	while (ptr)
 	{
@@ -177,15 +249,17 @@ t_point	new_p(int x, int y, t_list *map, t_data *img)
 	point.y = y;
 	point.z = map->int_array[x];
 	//if (map->int_array[x][1] != MAGENTA)
-	point.color = map->color_array[x];
 
+	point.color = map->color_array[x];
+	if (point.z != 0 && point.color == WHITE)
+	{
+		point.color = height_to_color(point);
+	}
 	point = apply_camera(point, img);
 	//add rotation option - rotate around x or y or z
 	if (img->mode == ISO)
 		point = rotation_iso(point);
 	//somehow axel didnt shift the z and it was fine, let's try like this
-
-
 	//it should be shifting to the center by calculating the line length (using zoom)
 	// point.x += map->width * img->zoom * map->width / 2;
 	// point.y += map->height * img->zoom * map->height / 2;
@@ -193,6 +267,13 @@ t_point	new_p(int x, int y, t_list *map, t_data *img)
 	point.x += img->width / 2.5;
 	point.y += img->height / 4.8;
 	return (point);
+}
+
+unsigned int height_to_color(t_point point)
+{
+	if (point.z > 0)
+		point.color = MAGENTA;
+	return (point.color);
 }
 
 t_point	apply_camera(t_point point, t_data *img)
@@ -210,72 +291,90 @@ void	drw_line(t_point point, t_point dest, t_data *img)
 	t_point	sign;
 	int		error;
 	int		error_2;
-	long	color_step;
 
 	delta.x = ft_abs(dest.x - point.x);
 	delta.y = ft_abs(dest.y - point.y);
 	vector_find_sign(point, dest, &sign);
 
-	color_step = ft_abs((long)dest.color - point.color);
-	if (delta.x + delta.y + delta.z != 0)
-		color_step = color_step / (delta.x + delta.y) * sign.color;
 	error = delta.x - delta.y;
 
 	//можно ли его использовать?
-	int line_len = sqrt(delta.x * delta.x + delta.y * delta.y);
-	if (line_len == 0)
-		line_len ++;
+	//float line_len_hypotenuse = sqrt(delta.x * delta.x + delta.y * delta.y);
 
-	int colorstep[4];
-	colorstep[0] = (get_r(dest.color) - get_r(point.color)) / line_len;
-	colorstep[1] = (get_g(dest.color) - get_g(point.color)) / line_len;
-	colorstep[2] = (get_b(dest.color) - get_b(point.color)) / line_len;
-	colorstep[3] = (get_a(dest.color) - get_a(point.color)) / line_len;
 
+	float draw_steps = delta.y;
+	if (delta.x > delta.y)
+		draw_steps = delta.x;
+	if (draw_steps == 0)
+		draw_steps ++;
+
+	float colorstep[4];
+	colorstep[0] = (get_r(dest.color) - get_r(point.color)) / draw_steps;
+	colorstep[1] = (get_g(dest.color) - get_g(point.color)) / draw_steps;
+	colorstep[2] = (get_b(dest.color) - get_b(point.color)) / draw_steps;
+	//colorstep[3] = (get_a(dest.color) - get_a(point.color));
+
+	int step;
+	step = 0;
 	while (point.x != dest.x || point.y != dest.y)
 	{
 		if (point.x < img->width && point.y < img->height && point.x >= 0 && point.y >= 0)
+		{
 			mlx_put_pixel(img->img, point.x, point.y, point.color);
+			// if (step > 0)
+			// {
+				point.color = gradient_step(point, colorstep);
+				step = 0;
+			// }
+			//ft_printf("the coordinate is %i %i and the color is %x\n", point.x, point.y, point.color);
+		}
 		error_2 = error * 2;
 		if (error_2 > -delta.y)
 			error -= delta.y;
 		if (error_2 > -delta.y)
 		{
 			point.x += sign.x; //increment + or -1
-			if (color_step)
-				point.color = gradient_step(point, dest, line_len, colorstep);
+			step ++;
 		}
 		if (error_2 < delta.x)
 			error += delta.x;
 		if (error_2 < delta.x)
 		{
 			point.y += sign.y;  //increment + or -1
-			if (color_step)
-				point.color = gradient_step(point, dest, line_len, colorstep);
+			step ++;
 		}
-
 	}
 	//if (point.x < img->width && point.y < img->height && point.x >= 0 && point.y >= 0)
 	//	mlx_put_pixel(img->img, point.x, point.y, point.color);
 	//do i need to draw another pixel?
 }
-
-unsigned int	gradient_step(t_point point, t_point dest, int line_len, int *colorstep)
+unsigned int	gradient_step(t_point point, float *colorstep)
 {
-	long newcolor[4];
+	int	newcolor[4];
 	unsigned int color;
+	int						i;
 
 	newcolor[0] = get_r(point.color);
 	newcolor[1] = get_g(point.color);
 	newcolor[2] = get_b(point.color);
 	newcolor[3] = get_a(point.color);
 
-	newcolor[0] += colorstep[0];
-	newcolor[1] += colorstep[1];
-	newcolor[2] += colorstep[2];
-	newcolor[3] += colorstep[3];
-
-	color = newcolor[0] << 24 | newcolor[1] << 16 | newcolor[2] | newcolor[3];
+	i = 0;
+	while (i < 3)
+	{
+		newcolor[i] = (int)round(newcolor[i] + colorstep[i]);
+		i ++;
+	}
+	i = 0;
+	while (i < 3)
+	{
+		if (newcolor[i] < 0)
+			newcolor[i] = 0;
+		else if (newcolor[i] > 255)
+			newcolor[i] = 255;
+		i ++;
+	}
+	color = ((unsigned int)newcolor[0] << 24) | ((unsigned int)newcolor[1] << 16) | ((unsigned int)newcolor[2] << 8) | (unsigned int)newcolor[3];;
 	return (color);
 }
 
@@ -301,18 +400,6 @@ void	vector_find_sign(t_point point, t_point dest, t_point *sign)
 	else
 		sign->color = -1;
 }
-
-static void ft_hook(void* param)
-{
-
-	const mlx_t* mlx = param;
-
-	(void)mlx;
-
-	//ft_printf("WIDTH: %d | HEIGHT: %d\n", mlx->width, mlx->height);
-	//ft_printf("hooking....");
-}
-
 
 
 // void	draw_line(t_point point, t_point dest, t_data *img)

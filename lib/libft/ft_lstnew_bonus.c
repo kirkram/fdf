@@ -6,7 +6,7 @@
 /*   By: klukiano <klukiano@student.hive.fi>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/11/07 12:58:13 by klukiano          #+#    #+#             */
-/*   Updated: 2024/01/26 19:01:50 by klukiano         ###   ########.fr       */
+/*   Updated: 2024/01/27 13:31:29 by klukiano         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -24,6 +24,7 @@ t_list	*ft_lstnew(void *content)
 	node->cells = NULL;
 	node->int_array = NULL;
 	node->color_array = NULL;
+	node->is_colored = NULL;
 	node->width = 0;
 	node->height = 0;
 	node->amount = 0;
