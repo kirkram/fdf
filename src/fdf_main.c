@@ -6,7 +6,7 @@
 /*   By: klukiano <klukiano@student.hive.fi>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/01/16 13:23:45 by klukiano          #+#    #+#             */
-/*   Updated: 2024/01/27 16:02:13 by klukiano         ###   ########.fr       */
+/*   Updated: 2024/01/29 15:19:43 by klukiano         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -24,7 +24,7 @@ t_list	*fdf_reader(int fd);
 int		check_and_del_newline(char *l);
 int		is_cell_colored(char *str);
 int		is_valid_hex(char *str);
-void 	ft_hook(void* param);
+void 	ft_hook_hub(void* param);
 t_list	*ft_pointnew(void *content);
 void	draw_and_move_00(t_list **map);
 
@@ -32,18 +32,19 @@ void	init_and_draw(t_list **map);
 void	draw_map(t_list **map, t_data *img);
 t_point	new_p(int x, int y, t_list *map, t_data *img);
 void	drw_line(t_point point, t_point dest, t_data *img);
-long	ft_abs(long result);
+int	ft_abs(int result);
 void	vector_find_sign(t_point point, t_point dest, t_point *sign);
 t_point	apply_camera(t_point point, t_data *img);
 void	zoom_calc(t_list *map, t_data *img);
 t_data	*init_window(t_data *img);
-t_point	rotation_iso(t_point point);
+t_point	rotation_func(t_point point, t_data *img);
 unsigned int	gradient_step(t_point point, float *colorstep);
 unsigned int height_to_color(t_point point);
 void	my_scrollhook(double xdelta, double ydelta, void* param);
 void my_keyhook(mlx_key_data_t keydata, void* param);
 
 void	draw_line(t_point point, t_point dest, t_data *img);
+void	put_background(t_data *img);
 
 t_list	*fdf_reader(int fd);
 
@@ -74,96 +75,175 @@ void	init_and_draw(t_list **map)
 	img = malloc(sizeof(t_data));
 	zoom_calc(*map, img);
 	img = init_window(img);
+	put_background(img);
 	if (!img || (mlx_image_to_window(img->mlx, img->img, 0, 0) < 0))
 	{
 		free (img);
 		ft_lstclear(map, free);
 		return ;
 	}
-	draw_map(map, img);
-
-	mlx_scroll_hook(img->mlx, my_scrollhook, img);
-	mlx_loop_hook(img->mlx, ft_hook, img);
+	img->map = map;
+	draw_map(img->map, img);
+	mlx_loop_hook(img->mlx, &ft_hook_hub, img);
+	//mlx_key_hook(img->mlx, my_keyhook, img);
+	mlx_scroll_hook(img->mlx, &my_scrollhook, img);
 	mlx_loop(img->mlx);
 
 	mlx_terminate(img->mlx);
+	ft_lstclear(img->map, free);
 	free (img);
 }
 
-void my_scrollhook(double xdelta, double ydelta, void* param)
+void ft_hook_hub(void* param)
 {
-	// Simple up or down detection.
-	if (ydelta > 0)
-	;
-	else if (ydelta < 0)
-		puts("Down!");
-
-	// Can also detect a mousewheel that goes along the X (e.g: MX Master 3)
-	if (xdelta < 0)
-		puts("Sliiiide to the left!");
-	else if (xdelta > 0)
-		puts("Sliiiide to the right!");
-}
-
-void ft_hook(void* param)
-{
-	t_data *img;
+	t_data	*img;
+	mlx_key_data_t keydata;
 
 	img = param;
-	mlx_key_hook(img->mlx, my_keyhook, img);
+	keydata = img->keydata;
+	//mlx_key_hook(img->mlx, my_keyhook, img);
+	if (mlx_is_key_down(img->mlx, MLX_KEY_ESCAPE))
+		mlx_close_window(img->mlx);
+
+	else if (mlx_is_key_down(img->mlx, MLX_KEY_A))
+	{
+		img->shift_x -= 10;
+		mlx_delete_image(img->mlx, img->img);
+		img->img = mlx_new_image(img->mlx, img->width, img->height);
+		mlx_image_to_window(img->mlx, img->img, 0, 0);
+		draw_map(img->map, img);
+	}
+	else  if (mlx_is_key_down(img->mlx, MLX_KEY_D))
+	{
+		img->shift_x += 10;
+		draw_map(img->map, img);
+	}
+	else if (mlx_is_key_down(img->mlx, MLX_KEY_W))
+	{
+		img->shift_y -= 10;
+		draw_map(img->map, img);
+	}
+	else if (mlx_is_key_down(img->mlx, MLX_KEY_S))
+	{
+		img->shift_y += 10;
+		draw_map(img->map, img);
+	}
+	else if (mlx_is_key_down(img->mlx, MLX_KEY_Z))
+	{
+		img->shift_z -= 0.1;
+		draw_map(img->map, img);
+	}
+	else if (mlx_is_key_down(img->mlx, MLX_KEY_X))
+	{
+		img->shift_z += 0.1;
+		draw_map(img->map, img);
+	}
+	else if (mlx_is_key_down(img->mlx, MLX_KEY_K))
+	{
+		img->angle_rz += 1;
+		mlx_delete_image(img->mlx, img->img);
+		img->img = mlx_new_image(img->mlx, img->width, img->height);
+		mlx_image_to_window(img->mlx, img->img, 0, 0);
+		draw_map(img->map, img);
+	}
+	else if (mlx_is_key_down(img->mlx, MLX_KEY_I))
+	{
+		img->angle_rz += 1;
+		draw_map(img->map, img);
+	}
+	// else if (mlx_is_key_down(img->mlx, MLX_KEY_H))
+	// {
+	// 	while ()
+	// 	{
+	// 		img->angle_rz += 1;
+	// 		draw_map(img->map, img);
+	// 	}
+	// }
+	else if (mlx_is_key_down(img->mlx, MLX_KEY_R))
+	{
+		img->shift_x = 0;
+		img->shift_y = 0;
+		img->shift_z = 0.1;
+		img->angle_rz = 0;
+		draw_map(img->map, img);
+	}
+	else if (mlx_is_key_down(img->mlx, MLX_KEY_KP_ADD))
+	{
+		img->zoom += 1;
+		draw_map(img->map, img);
+	}
+	else if (mlx_is_key_down(img->mlx, MLX_KEY_KP_SUBTRACT))
+	{
+		img->zoom -= 1;
+		draw_map(img->map, img);
+	}
 }
 
 void my_keyhook(mlx_key_data_t keydata, void* param)
 {
-	t_data *img;
-
+	t_data	*img;
+	(void)keydata;
 	img = param;
 
-	if (keydata.key == MLX_KEY_ESCAPE && keydata.action == MLX_PRESS)
+}
+
+void my_scrollhook(double xdelta, double ydelta, void* param)
+{
+	t_data	*img;
+
+	(void) xdelta;
+	img = param;
+	if (ydelta > 0)
 	{
-		mlx_close_window(img->mlx);
-		return ;
+		img->zoom += 1;
+		mlx_delete_image(img->mlx, img->img);
+		img->img = mlx_new_image(img->mlx, img->width, img->height);
+		mlx_image_to_window(img->mlx, img->img, 0, 0);
+		draw_map(img->map, img);
 	}
-	// If we PRESS the 'J' key, print "Hello".
-	if (keydata.key == MLX_KEY_J && keydata.action == MLX_PRESS)
-		puts("Hello ");
-
-	// If we RELEASE the 'K' key, print "World".
-	if (keydata.key == MLX_KEY_K && keydata.action == MLX_RELEASE)
-		puts("World");
-
-	// If we HOLD the 'L' key, print "!".
-	if (keydata.key == MLX_KEY_L && keydata.action == MLX_REPEAT)
-		puts("!");
+	else if (ydelta < 0)
+	{
+		img->zoom -= 1;
+		mlx_delete_image(img->mlx, img->img);
+		img->img = mlx_new_image(img->mlx, img->width, img->height);
+		mlx_image_to_window(img->mlx, img->img, 0, 0);
+		draw_map(img->map, img);
+	}
 }
 
 void	zoom_calc(t_list *map, t_data *img)
 {
-	double	scale_w;
-	double	scale_h;
+	int		scale_w;
+	int		scale_h;
 	int		width;
 	int		height;
 
 	width = map->width;
 	height = map->height;
+	img->zoom = 1;
 	scale_w = TRGT_W / (width + 1) / 2;
 	scale_h = TRGT_H / (height + 1) / 2;
-	if (fabs(TRGT_H - width * scale_h) <= fabs(TRGT_W - height * scale_w))
-		img->zoom = scale_h;
-	else
-		img->zoom = scale_w;
+	//if (ft_abs(TRGT_H - width * scale_h) <= ft_abs(TRGT_W - height * scale_w))
+		img->zoom *= scale_h;
+	//else
+		//img->zoom *= scale_w;
 
-	img->zoom *= ZOOM_AMOUNT;
 }
 
 t_data	*init_window(t_data *img)
 {
 	img->width = TRGT_W;
 	img->height = TRGT_H;
+	img->shift_x = 0;
+	img->shift_y = 0;
+	img->shift_z = 0.1;
+	img->mode = ISO;
+	img->angle_rz = 0;
 
-	img->mlx = mlx_init(img->width, img->height, "FDF", 1);
+	img->mlx = mlx_init(img->width, img->height, "FDF", 0);
 	if (!img->mlx)
 		return(NULL);
+	img->backg = mlx_new_image(img->mlx, img->width, img->height);
 	img->img = mlx_new_image(img->mlx, img->width, img->height);
 	if (!img->img)
 		return (NULL);
@@ -172,43 +252,19 @@ t_data	*init_window(t_data *img)
 	return (img);
 }
 
-t_point	rotation_iso(t_point point)
-{
-	t_point	temp;
-
-	//Rz rotation for 45 i think the ANGL_X and ANGL_Y application is not right as it is
-	float angle_45;
-	float angle_30;
-
-	angle_45 = 45 * (PI / 180);
-	angle_30 = 30 * (PI / 180);
-	temp.x = ANGL_X * point.x * cos(angle_45) - ANGL_Y * point.y * sin(angle_45);
-	temp.y = ANGL_Y * point.y * cos(angle_45) + ANGL_X * point.x * sin(angle_45);
-
-	point.x = temp.x;
- 	point.y = temp.y;
-
-	//Rx rotation for 30
-	temp.y = ANGL_Y * point.y * cos(angle_30) - DEPTH * point.z * sin(angle_30);
-	temp.z = DEPTH * point.z * cos(angle_30) + ANGL_Y * point.y * sin(angle_30);
-
-	point.y = temp.y;
-	point.z = temp.z;
-
-	return (point);
-}
-
 void	put_background(t_data *img)
 {
 	int		x;
 	int		y;
+
+	mlx_image_to_window(img->mlx, img->backg, 0, 0);
 	y = 0;
 	while (y < img->height)
 	{
 		x = 0;
 		while (x < img->width)
 		{
-			mlx_put_pixel(img->img, x, y, 0x000000AA);
+			mlx_put_pixel(img->backg, x, y, 0x000000FF);
 			x ++;
 		}
 		y ++;
@@ -222,9 +278,10 @@ void	draw_map(t_list **map, t_data *img)
 	int		y;
 
 	ptr = *map;
-	put_background(img);
+	//put_background(img);
 
 	y = 0;
+
 	while (ptr)
 	{
 		x = 0;
@@ -248,6 +305,7 @@ t_point	new_p(int x, int y, t_list *map, t_data *img)
 	point.x = x;
 	point.y = y;
 	point.z = map->int_array[x];
+	point.z *= img->shift_z;
 	//if (map->int_array[x][1] != MAGENTA)
 
 	point.color = map->color_array[x];
@@ -257,15 +315,14 @@ t_point	new_p(int x, int y, t_list *map, t_data *img)
 	}
 	point = apply_camera(point, img);
 	//add rotation option - rotate around x or y or z
-	if (img->mode == ISO)
-		point = rotation_iso(point);
-	//somehow axel didnt shift the z and it was fine, let's try like this
-	//it should be shifting to the center by calculating the line length (using zoom)
-	// point.x += map->width * img->zoom * map->width / 2;
-	// point.y += map->height * img->zoom * map->height / 2;
 
-	point.x += img->width / 2.5;
-	point.y += img->height / 4.8;
+	point = rotation_func(point, img);
+
+	point.x += img->shift_x;
+	point.y += img->shift_y;
+
+	point.x += img->width / 3;
+	point.y += img->height / 5;
 	return (point);
 }
 
@@ -273,15 +330,52 @@ unsigned int height_to_color(t_point point)
 {
 	if (point.z > 0)
 		point.color = MAGENTA;
+	if (point.z < 0)
+		point.color = MAGENTA;
 	return (point.color);
 }
 
 t_point	apply_camera(t_point point, t_data *img)
 {
-	//some problem with int
 	point.x *= img->zoom;
 	point.y *= img->zoom;
-	point.z *= img->zoom * DEPTH;
+	point.z *= img->zoom;
+	return (point);
+}
+
+t_point	rotation_func(t_point point, t_data *img)
+{
+	t_point	temp;
+
+	//Rz rotation for 45 i think the ANGL_X and ANGL_Y application is not right as it is
+	float angle_45;
+	float angle_30;
+	int angle_rz;
+	(void)img;
+
+	//here we'd change the 45a and 30 to a different angle according to user input
+	//the default values will be depending on the MODE value
+	//45 = 0.78539816339
+	//30 = 0.52359877559
+
+	angle_rz = img->angle_rz;
+	angle_45 = (45 + angle_rz) * (PI / 180);
+	angle_30 = (30 + angle_rz) * (PI / 180);
+
+	//This is Rz
+	temp.x = point.x * cos(angle_45) - point.y * sin(angle_45);
+	temp.y = point.y * cos(angle_45) + point.x * sin(angle_45);
+
+	point.x = temp.x;
+ 	point.y = temp.y;
+
+	//This is Rx
+	temp.y = point.y * cos(angle_30) - point.z * sin(angle_30);
+	temp.z = point.z * cos(angle_30) + point.y * sin(angle_30);
+
+	point.y = temp.y;
+	point.z = temp.z;
+
 	return (point);
 }
 
@@ -302,47 +396,34 @@ void	drw_line(t_point point, t_point dest, t_data *img)
 	//float line_len_hypotenuse = sqrt(delta.x * delta.x + delta.y * delta.y);
 
 
-	float draw_steps = delta.y;
-	if (delta.x > delta.y)
-		draw_steps = delta.x;
-	if (draw_steps == 0)
-		draw_steps ++;
+	// float draw_steps = delta.y;
+	// if (delta.x > delta.y)
+	// 	draw_steps = delta.x;
+	// if (draw_steps == 0)
+	// 	draw_steps ++;
 
-	float colorstep[4];
-	colorstep[0] = (get_r(dest.color) - get_r(point.color)) / draw_steps;
-	colorstep[1] = (get_g(dest.color) - get_g(point.color)) / draw_steps;
-	colorstep[2] = (get_b(dest.color) - get_b(point.color)) / draw_steps;
-	//colorstep[3] = (get_a(dest.color) - get_a(point.color));
+	// float colorstep[4];
+	// colorstep[0] = (get_r(dest.color) - get_r(point.color)) / draw_steps;
+	// colorstep[1] = (get_g(dest.color) - get_g(point.color)) / draw_steps;
+	// colorstep[2] = (get_b(dest.color) - get_b(point.color)) / draw_steps;
 
-	int step;
-	step = 0;
+
 	while (point.x != dest.x || point.y != dest.y)
 	{
 		if (point.x < img->width && point.y < img->height && point.x >= 0 && point.y >= 0)
 		{
 			mlx_put_pixel(img->img, point.x, point.y, point.color);
-			// if (step > 0)
-			// {
-				point.color = gradient_step(point, colorstep);
-				step = 0;
-			// }
-			//ft_printf("the coordinate is %i %i and the color is %x\n", point.x, point.y, point.color);
+			//point.color = gradient_step(point, colorstep);
 		}
 		error_2 = error * 2;
 		if (error_2 > -delta.y)
 			error -= delta.y;
 		if (error_2 > -delta.y)
-		{
 			point.x += sign.x; //increment + or -1
-			step ++;
-		}
 		if (error_2 < delta.x)
 			error += delta.x;
 		if (error_2 < delta.x)
-		{
 			point.y += sign.y;  //increment + or -1
-			step ++;
-		}
 	}
 	//if (point.x < img->width && point.y < img->height && point.x >= 0 && point.y >= 0)
 	//	mlx_put_pixel(img->img, point.x, point.y, point.color);
@@ -378,7 +459,7 @@ unsigned int	gradient_step(t_point point, float *colorstep)
 	return (color);
 }
 
-long ft_abs(long result)
+int ft_abs(int result)
 {
 	if (result < 0)
 		result = -result;
