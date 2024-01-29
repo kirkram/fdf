@@ -6,7 +6,7 @@
 /*   By: klukiano <klukiano@student.hive.fi>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/01/16 13:23:45 by klukiano          #+#    #+#             */
-/*   Updated: 2024/01/29 17:00:10 by klukiano         ###   ########.fr       */
+/*   Updated: 2024/01/29 17:58:11 by klukiano         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -35,7 +35,7 @@ void	drw_line(t_point point, t_point dest, t_data *img);
 int	ft_abs(int result);
 void	vector_find_sign(t_point point, t_point dest, t_point *sign);
 t_point	apply_camera(t_point point, t_data *img);
-int		zoom_calc(t_list *map, t_data *img);
+float		zoom_calc(t_list *map, t_data *img);
 t_data	*init_window(t_data *img);
 t_point	rotation_func(t_point point, t_data *img);
 unsigned int	gradient_step(t_point point, float *colorstep);
@@ -64,8 +64,9 @@ int	main(int ac, char **av)
 		if (!map)
 			return (1);
 		init_and_draw(&map);
+		close(fd);
+		ft_lstclear(&map, free);
 	}
-	ft_lstclear(&map, free);
 	return (EXIT_SUCCESS);
 }
 
@@ -106,7 +107,7 @@ void ft_hook_hub(void* param)
 		img->shift_x -= 10;
 		redraw_image(img);
 	}
-	else  if (mlx_is_key_down(img->mlx, MLX_KEY_D))
+	else if (mlx_is_key_down(img->mlx, MLX_KEY_D))
 	{
 		img->shift_x += 10;
 		redraw_image(img);
@@ -123,22 +124,32 @@ void ft_hook_hub(void* param)
 	}
 	else if (mlx_is_key_down(img->mlx, MLX_KEY_Z))
 	{
-		img->shift_z -= 0.1;
+		img->shift_z -= 0.01;
 		redraw_image(img);
 	}
 	else if (mlx_is_key_down(img->mlx, MLX_KEY_X))
 	{
-		img->shift_z += 0.1;
+		img->shift_z += 0.01;
 		redraw_image(img);
 	}
-	else if (mlx_is_key_down(img->mlx, MLX_KEY_K))
+	else if (mlx_is_key_down(img->mlx, MLX_KEY_J))
 	{
 		img->angle_z += 1;
 		redraw_image(img);
 	}
-	else if (mlx_is_key_down(img->mlx, MLX_KEY_I))
+	else if (mlx_is_key_down(img->mlx, MLX_KEY_L))
 	{
 		img->angle_z -= 1;
+		redraw_image(img);
+	}
+	else if (mlx_is_key_down(img->mlx, MLX_KEY_I))
+	{
+		img->angle_x += 1;
+		redraw_image(img);
+	}
+	else if (mlx_is_key_down(img->mlx, MLX_KEY_K))
+	{
+		img->angle_x -= 1;
 		redraw_image(img);
 	}
 	// else if (mlx_is_key_down(img->mlx, MLX_KEY_H))
@@ -160,12 +171,23 @@ void ft_hook_hub(void* param)
 	}
 	else if (mlx_is_key_down(img->mlx, MLX_KEY_KP_ADD))
 	{
-		img->zoom += 1;
+
+		if (img->width < 100)
+			img->zoom += 1;
+		else
+			img->zoom += 0.5;
+
 		redraw_image(img);
 	}
 	else if (mlx_is_key_down(img->mlx, MLX_KEY_KP_SUBTRACT))
 	{
-		img->zoom -= 1;
+		if (img->zoom >= 1)
+		{
+			if (img->width < 100)
+				img->zoom -= 1;
+			else
+				img->zoom -= 0.5;
+		}
 		redraw_image(img);
 	}
 }
@@ -212,7 +234,7 @@ void my_scrollhook(double xdelta, double ydelta, void* param)
 	}
 }
 
-int	zoom_calc(t_list *map, t_data *img)
+float	zoom_calc(t_list *map, t_data *img)
 {
 	int		scale_w;
 	int		scale_h;
@@ -236,10 +258,11 @@ t_data	*init_window(t_data *img)
 {
 	img->width = TRGT_W;
 	img->height = TRGT_H;
-	img->shift_x = 0;
+	img->shift_x = -100;
 	img->shift_y = 0;
-	img->shift_z = 0.1;
+	img->shift_z = 0.2;
 	img->mode = ISO;
+	img->angle_x = 0;
 	img->angle_z = 0;
 
 	img->mlx = mlx_init(img->width, img->height, "FDF", 0);
@@ -314,19 +337,14 @@ t_point	new_p(int x, int y, t_list *map, t_data *img)
 	point.y = y;
 	point.z = map->int_array[x];
 	point.z *= img->shift_z;
-	//if (map->int_array[x][1] != MAGENTA)
 
 	point.color = map->color_array[x];
 	if (point.z != 0 && point.color == WHITE)
 		point.color = height_to_color(point);
 	point = apply_camera(point, img);
-	//add rotation option - rotate around x or y or z
-
 	point = rotation_func(point, img);
-
 	point.x += img->shift_x;
 	point.y += img->shift_y;
-
 	point.x += img->width / 2;
 	point.y += img->height / 5;
 	return (point);
@@ -337,7 +355,7 @@ unsigned int height_to_color(t_point point)
 	if (point.z > 0)
 		point.color = MAGENTA;
 	if (point.z < 0)
-		point.color = MAGENTA;
+		point.color = PURPLE;
 	return (point.color);
 }
 
@@ -356,6 +374,7 @@ t_point	rotation_func(t_point point, t_data *img)
 	//Rz rotation for 45 i think the ANGL_X and ANGL_Y application is not right as it is
 	float angle_45;
 	float angle_30;
+	int	angle_x;
 	int angle_z;
 	(void)img;
 
@@ -364,9 +383,12 @@ t_point	rotation_func(t_point point, t_data *img)
 	//45 = 0.78539816339
 	//30 = 0.52359877559
 
+
+	angle_x = img->angle_x;
 	angle_z = img->angle_z;
+
 	angle_45 = (45 + angle_z) * (PI / 180);
-	angle_30 = 30 * (PI / 180);
+	angle_30 = (30 + angle_x) * (PI / 180);
 
 	//This is Rz
 	temp.x = point.x * cos(angle_45) - point.y * sin(angle_45);
@@ -402,16 +424,18 @@ void	drw_line(t_point point, t_point dest, t_data *img)
 	//float line_len_hypotenuse = sqrt(delta.x * delta.x + delta.y * delta.y);
 
 
-	// float draw_steps = delta.y;
-	// if (delta.x > delta.y)
-	// 	draw_steps = delta.x;
-	// if (draw_steps == 0)
-	// 	draw_steps ++;
+	float draw_steps = delta.y;
+	if (delta.x > delta.y)
+		draw_steps = delta.x;
+	if (draw_steps == 0)
+		draw_steps ++;
 
-	// float colorstep[4];
-	// colorstep[0] = (get_r(dest.color) - get_r(point.color)) / draw_steps;
-	// colorstep[1] = (get_g(dest.color) - get_g(point.color)) / draw_steps;
-	// colorstep[2] = (get_b(dest.color) - get_b(point.color)) / draw_steps;
+	draw_steps = sqrt(delta.x * delta.x + delta.y * delta.y);
+
+	float colorstep[4];
+	colorstep[0] = (get_r(dest.color) - get_r(point.color)) / draw_steps;
+	colorstep[1] = (get_g(dest.color) - get_g(point.color)) / draw_steps;
+	colorstep[2] = (get_b(dest.color) - get_b(point.color)) / draw_steps;
 
 
 	while (point.x != dest.x || point.y != dest.y)
@@ -419,7 +443,7 @@ void	drw_line(t_point point, t_point dest, t_data *img)
 		if (point.x < img->width && point.y < img->height && point.x >= 0 && point.y >= 0)
 		{
 			mlx_put_pixel(img->img, point.x, point.y, point.color);
-			//point.color = gradient_step(point, colorstep);
+			point.color = gradient_step(point, colorstep);
 		}
 		error_2 = error * 2;
 		if (error_2 > -delta.y)
