@@ -6,7 +6,7 @@
 /*   By: klukiano <klukiano@student.hive.fi>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/01/16 13:23:45 by klukiano          #+#    #+#             */
-/*   Updated: 2024/01/29 17:58:11 by klukiano         ###   ########.fr       */
+/*   Updated: 2024/01/30 18:57:20 by klukiano         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -32,14 +32,14 @@ void	init_and_draw(t_list **map);
 void	draw_map(t_list **map, t_data *img);
 t_point	new_p(int x, int y, t_list *map, t_data *img);
 void	drw_line(t_point point, t_point dest, t_data *img);
-int	ft_abs(int result);
+int		ft_abs(int result);
 void	vector_find_sign(t_point point, t_point dest, t_point *sign);
 t_point	apply_camera(t_point point, t_data *img);
 float		zoom_calc(t_list *map, t_data *img);
 t_data	*init_window(t_data *img);
 t_point	rotation_func(t_point point, t_data *img);
-unsigned int	gradient_step(t_point point, float *colorstep);
-unsigned int height_to_color(t_point point);
+void	gradient_step(t_point *point, float *colorstep);
+unsigned int height_to_color(t_point point, t_data *img);
 void	my_scrollhook(double xdelta, double ydelta, void* param);
 void my_keyhook(mlx_key_data_t keydata, void* param);
 t_data	*redraw_image(t_data *img);
@@ -48,6 +48,9 @@ void	draw_line(t_point point, t_point dest, t_data *img);
 t_data	*put_background(t_data *img);
 
 t_list	*fdf_reader(int fd);
+float	*cstep(float *cstep, t_point *p, t_point *dst, t_point *dlt);
+void	assign_delta(t_point *delta, t_point point, t_point dest);
+void	put_pixel(t_data *img, t_point *point, float *c_step);
 
 int	main(int ac, char **av)
 {
@@ -124,12 +127,14 @@ void ft_hook_hub(void* param)
 	}
 	else if (mlx_is_key_down(img->mlx, MLX_KEY_Z))
 	{
-		img->shift_z -= 0.01;
+		if (img->shift_z > -0.5)
+			img->shift_z -= 0.01;
 		redraw_image(img);
 	}
 	else if (mlx_is_key_down(img->mlx, MLX_KEY_X))
 	{
-		img->shift_z += 0.01;
+		if (img->shift_z < 0.5)
+			img->shift_z += 0.01;
 		redraw_image(img);
 	}
 	else if (mlx_is_key_down(img->mlx, MLX_KEY_J))
@@ -152,20 +157,55 @@ void ft_hook_hub(void* param)
 		img->angle_x -= 1;
 		redraw_image(img);
 	}
-	// else if (mlx_is_key_down(img->mlx, MLX_KEY_H))
+	else if (mlx_is_key_down(img->mlx, MLX_KEY_Y))
+	{
+		img->angle_y -= 1;
+		redraw_image(img);
+	}
+	else if (mlx_is_key_down(img->mlx, MLX_KEY_H))
+	{
+		img->angle_y += 1;
+		redraw_image(img);
+	}
+	else if (mlx_is_key_down(img->mlx, MLX_KEY_M))
+	{
+		img->height_col = YELLOW;
+		redraw_image(img);
+	}
+	else if (mlx_is_key_down(img->mlx, MLX_KEY_N))
+	{
+		img->height_col = MAGENTA;
+		redraw_image(img);
+	}
+	// else if (mlx_is_key_down(img->mlx, MLX_KEY_Q))
 	// {
-	// 	while ()
-	// 	{
-	// 		img->angle_rz += 1;
-	// 		draw_map(img->map, img);
-	// 	}
+	// 	img->color_mode = GRADIENT;
+	// 	redraw_image(img);
+	// }
+	// else if (mlx_is_key_down(img->mlx, MLX_KEY_B))
+	// {
+	// 	img->color_mode = BASIC;
+	// 	redraw_image(img);
 	// }
 	else if (mlx_is_key_down(img->mlx, MLX_KEY_R))
 	{
-		img->shift_x = 0;
+		img->shift_x = -100;
 		img->shift_y = 0;
-		img->shift_z = 0.1;
+		img->shift_z = 0.2;
+		img->angle_x = 0;
+		img->angle_y = 0;
 		img->angle_z = 0;
+		img->zoom = zoom_calc(*img->map, img);
+		redraw_image(img);
+	}
+	else if (mlx_is_key_down(img->mlx, MLX_KEY_1))
+	{
+		img->shift_x = -400;
+		img->shift_y = 150;
+		img->shift_z = 0.2;
+		img->angle_x = -30;
+		img->angle_y = 0;
+		img->angle_z = -45;
 		img->zoom = zoom_calc(*img->map, img);
 		redraw_image(img);
 	}
@@ -190,14 +230,11 @@ void ft_hook_hub(void* param)
 		}
 		redraw_image(img);
 	}
-}
-
-void my_keyhook(mlx_key_data_t keydata, void* param)
-{
-	t_data	*img;
-	(void)keydata;
-	img = param;
-
+	else if (mlx_is_key_down(img->mlx, MLX_KEY_KP_0))
+	{
+		puts("!!!!");
+		//redraw_image(img);
+	}
 }
 
 t_data	*redraw_image(t_data *img)
@@ -262,12 +299,14 @@ t_data	*init_window(t_data *img)
 	img->shift_y = 0;
 	img->shift_z = 0.2;
 	img->mode = ISO;
+	img->color_mode = GRADIENT;
 	img->angle_x = 0;
+	img->angle_y = 0;
 	img->angle_z = 0;
-
+	img->height_col = MAGENTA;
 	img->mlx = mlx_init(img->width, img->height, "FDF", 0);
 	if (!img->mlx)
-		return(NULL);
+		return (NULL);
 	img->backg = mlx_new_image(img->mlx, img->width, img->height);
 	if (!img->backg)
 		return (NULL);
@@ -275,7 +314,6 @@ t_data	*init_window(t_data *img)
 	if (!img->img || !img->backg)
 		return (NULL);
 	img->mode = ISO;
-
 	if (!put_background(img))
 		return (NULL);
 	return (img);
@@ -309,10 +347,7 @@ void	draw_map(t_list **map, t_data *img)
 	int		y;
 
 	ptr = *map;
-	//put_background(img);
-
 	y = 0;
-
 	while (ptr)
 	{
 		x = 0;
@@ -321,7 +356,8 @@ void	draw_map(t_list **map, t_data *img)
 			if (x < (*map)->width - 1)
 				drw_line(new_p(x, y, ptr, img), new_p(x + 1, y, ptr, img), img);
 			if (y < (*map)->height - 1)
-				drw_line(new_p(x, y, ptr, img), new_p(x, y + 1, ptr->next, img), img);
+				drw_line(new_p(x, y, ptr, img), \
+				new_p(x, y + 1, ptr->next, img), img);
 			x ++;
 		}
 		y ++;
@@ -337,10 +373,9 @@ t_point	new_p(int x, int y, t_list *map, t_data *img)
 	point.y = y;
 	point.z = map->int_array[x];
 	point.z *= img->shift_z;
-
 	point.color = map->color_array[x];
 	if (point.z != 0 && point.color == WHITE)
-		point.color = height_to_color(point);
+		point.color = height_to_color(point, img);
 	point = apply_camera(point, img);
 	point = rotation_func(point, img);
 	point.x += img->shift_x;
@@ -350,10 +385,16 @@ t_point	new_p(int x, int y, t_list *map, t_data *img)
 	return (point);
 }
 
-unsigned int height_to_color(t_point point)
+unsigned int height_to_color(t_point point, t_data *img)
 {
+	(void)img;
 	if (point.z > 0)
-		point.color = MAGENTA;
+	{
+		if (point.z > 6)
+			point.color = YELLOW;
+		else
+			point.color = img->height_col;
+	}
 	if (point.z < 0)
 		point.color = PURPLE;
 	return (point.color);
@@ -370,112 +411,105 @@ t_point	apply_camera(t_point point, t_data *img)
 t_point	rotation_func(t_point point, t_data *img)
 {
 	t_point	temp;
+	float	angle_45;
+	float	angle_30;
+	float	angle_1;
 
-	//Rz rotation for 45 i think the ANGL_X and ANGL_Y application is not right as it is
-	float angle_45;
-	float angle_30;
-	int	angle_x;
-	int angle_z;
-	(void)img;
-
-	//here we'd change the 45a and 30 to a different angle according to user input
-	//the default values will be depending on the MODE value
-	//45 = 0.78539816339
-	//30 = 0.52359877559
-
-
-	angle_x = img->angle_x;
-	angle_z = img->angle_z;
-
-	angle_45 = (45 + angle_z) * (PI / 180);
-	angle_30 = (30 + angle_x) * (PI / 180);
-
-	//This is Rz
+	angle_45 = (45 + img->angle_z) * 0.01745;
+	angle_30 = (30 + img->angle_x) * 0.01745;
 	temp.x = point.x * cos(angle_45) - point.y * sin(angle_45);
 	temp.y = point.y * cos(angle_45) + point.x * sin(angle_45);
-
 	point.x = temp.x;
- 	point.y = temp.y;
-
-	//This is Rx
+	point.y = temp.y;
 	temp.y = point.y * cos(angle_30) - point.z * sin(angle_30);
 	temp.z = point.z * cos(angle_30) + point.y * sin(angle_30);
-
 	point.y = temp.y;
 	point.z = temp.z;
-
+	if (img->angle_y != 0)
+	{
+		angle_1 = img->angle_y * (PI / 180);
+		temp.x = point.x * cos(angle_1) + point.z * sin(angle_1);
+		temp.z = -1 * point.x * sin(angle_1) + point.z * cos(angle_1);
+		point.x = temp.x;
+		point.z = temp.z;
+	}
 	return (point);
 }
 
 void	drw_line(t_point point, t_point dest, t_data *img)
 {
-	t_point	delta;
-	t_point	sign;
-	int		error;
-	int		error_2;
+	t_point		delta;
+	t_point		sign;
+	int			error;
+	int			error_2;
+	float		*colorstep;
 
-	delta.x = ft_abs(dest.x - point.x);
-	delta.y = ft_abs(dest.y - point.y);
+	assign_delta(&delta, point, dest);
 	vector_find_sign(point, dest, &sign);
-
 	error = delta.x - delta.y;
-
-	//можно ли его использовать?
-	//float line_len_hypotenuse = sqrt(delta.x * delta.x + delta.y * delta.y);
-
-
-	float draw_steps = delta.y;
-	if (delta.x > delta.y)
-		draw_steps = delta.x;
-	if (draw_steps == 0)
-		draw_steps ++;
-
-	draw_steps = sqrt(delta.x * delta.x + delta.y * delta.y);
-
-	float colorstep[4];
-	colorstep[0] = (get_r(dest.color) - get_r(point.color)) / draw_steps;
-	colorstep[1] = (get_g(dest.color) - get_g(point.color)) / draw_steps;
-	colorstep[2] = (get_b(dest.color) - get_b(point.color)) / draw_steps;
-
-
+	colorstep = NULL;
+	colorstep = cstep(colorstep, &point, &dest, &delta);
 	while (point.x != dest.x || point.y != dest.y)
 	{
-		if (point.x < img->width && point.y < img->height && point.x >= 0 && point.y >= 0)
-		{
-			mlx_put_pixel(img->img, point.x, point.y, point.color);
-			point.color = gradient_step(point, colorstep);
-		}
+		put_pixel(img, &point, colorstep);
 		error_2 = error * 2;
 		if (error_2 > -delta.y)
 			error -= delta.y;
 		if (error_2 > -delta.y)
-			point.x += sign.x; //increment + or -1
+			point.x += sign.x;
 		if (error_2 < delta.x)
 			error += delta.x;
 		if (error_2 < delta.x)
-			point.y += sign.y;  //increment + or -1
+			point.y += sign.y;
 	}
-	//if (point.x < img->width && point.y < img->height && point.x >= 0 && point.y >= 0)
-	//	mlx_put_pixel(img->img, point.x, point.y, point.color);
-	//do i need to draw another pixel?
+	free (colorstep);
 }
-unsigned int	gradient_step(t_point point, float *colorstep)
+
+void	assign_delta(t_point *delta, t_point point, t_point dest)
 {
-	int	newcolor[4];
-	unsigned int color;
-	int						i;
+	delta->x = ft_abs(dest.x - point.x);
+	delta->y = ft_abs(dest.y - point.y);
+}
 
-	newcolor[0] = get_r(point.color);
-	newcolor[1] = get_g(point.color);
-	newcolor[2] = get_b(point.color);
-	newcolor[3] = get_a(point.color);
-
-	i = 0;
-	while (i < 3)
+void	put_pixel(t_data *img, t_point *point, float *c_step)
+{
+	if (point->x < img->width && point->y < img->height && \
+		point->x >= 0 && point->y >= 0)
 	{
-		newcolor[i] = (int)round(newcolor[i] + colorstep[i]);
-		i ++;
+		mlx_put_pixel(img->img, point->x, point->y, point->color);
+		if (img->color_mode == GRADIENT)
+			gradient_step(point, c_step);
 	}
+}
+
+float	*cstep(float *cstep, t_point *p, t_point *dst, t_point *dlt)
+{
+	float		draw_steps;
+
+	cstep = malloc(4 * sizeof(float));
+	draw_steps = dlt->y;
+	if (dlt->x > dlt->y)
+		draw_steps = dlt->x;
+	if (draw_steps == 0)
+		draw_steps ++;
+
+	cstep[0] = (get_r(dst->color) - get_r(p->color)) / draw_steps;
+	cstep[1] = (get_g(dst->color) - get_g(p->color)) / draw_steps;
+	cstep[2] = (get_b(dst->color) - get_b(p->color)) / draw_steps;
+	return (cstep);
+}
+void	gradient_step(t_point *point, float *colorstep)
+{
+	int			newcolor[4];
+	int			i;
+
+	newcolor[0] = get_r(point->color);
+	newcolor[1] = get_g(point->color);
+	newcolor[2] = get_b(point->color);
+	newcolor[3] = get_a(point->color);
+	i = -1;
+	while (++i < 3)
+		newcolor[i] = (int)round(newcolor[i] + colorstep[i]);
 	i = 0;
 	while (i < 3)
 	{
@@ -485,8 +519,9 @@ unsigned int	gradient_step(t_point point, float *colorstep)
 			newcolor[i] = 255;
 		i ++;
 	}
-	color = ((unsigned int)newcolor[0] << 24) | ((unsigned int)newcolor[1] << 16) | ((unsigned int)newcolor[2] << 8) | (unsigned int)newcolor[3];;
-	return (color);
+	point->color = ((u_int32_t)newcolor[0] << 24) | \
+	((u_int32_t)newcolor[1] << 16) | \
+	((u_int32_t)newcolor[2] << 8) | (u_int32_t)newcolor[3];
 }
 
 int ft_abs(int result)
@@ -511,32 +546,3 @@ void	vector_find_sign(t_point point, t_point dest, t_point *sign)
 	else
 		sign->color = -1;
 }
-
-
-// void	draw_line(t_point point, t_point dest, t_data *img)
-// {
-
-// 	double dx = dest.x - point.x;
-//     double dy = dest.y - point.y;
-//     double steps = fmax(fabs(dx), fabs(dy));
-
-//     double x_inc = dx / steps;
-//     double y_inc = dy / steps;
-
-// 	uint32_t x_int;
-// 	uint32_t y_int;
-// 	int i = 0;
-// 	while (i < steps)
-// 	{
-// 		x_int = (uint32_t)round(point.x);
-// 		y_int = (uint32_t)round(point.y);
-
-// 		if (point.x < img->width && point.y < img->height && point.x && point.y)
-// 			mlx_put_pixel(img->img, point.x, point.y, point.color);
-
-// 		point.x += x_inc;
-// 		point.y += y_inc;
-// 		i ++;
-// 	}
-
-// }
