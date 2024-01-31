@@ -6,57 +6,21 @@
 /*   By: klukiano <klukiano@student.hive.fi>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/01/16 13:23:45 by klukiano          #+#    #+#             */
-/*   Updated: 2024/01/30 18:57:20 by klukiano         ###   ########.fr       */
+/*   Updated: 2024/01/31 15:56:29 by klukiano         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
-#include <stdio.h>
 #include "../lib/libft/libft.h"
 #include "../lib/ft_printf/ft_printf.h"
 #include "../lib/get_next_line/get_next_line.h"
-#include "../lib/MLX42/include/MLX42/MLX42.h"
-#include "../lib/MLX42/include/MLX42/MLX42_Int.h"
 #include "../include/fdf.h"
 #include <math.h>
 #include <fcntl.h>
-
-t_list	*fdf_reader(int fd);
-int		check_and_del_newline(char *l);
-int		is_cell_colored(char *str);
-int		is_valid_hex(char *str);
-void 	ft_hook_hub(void* param);
-t_list	*ft_pointnew(void *content);
-void	draw_and_move_00(t_list **map);
-
-void	init_and_draw(t_list **map);
-void	draw_map(t_list **map, t_data *img);
-t_point	new_p(int x, int y, t_list *map, t_data *img);
-void	drw_line(t_point point, t_point dest, t_data *img);
-int		ft_abs(int result);
-void	vector_find_sign(t_point point, t_point dest, t_point *sign);
-t_point	apply_camera(t_point point, t_data *img);
-float		zoom_calc(t_list *map, t_data *img);
-t_data	*init_window(t_data *img);
-t_point	rotation_func(t_point point, t_data *img);
-void	gradient_step(t_point *point, float *colorstep);
-unsigned int height_to_color(t_point point, t_data *img);
-void	my_scrollhook(double xdelta, double ydelta, void* param);
-void my_keyhook(mlx_key_data_t keydata, void* param);
-t_data	*redraw_image(t_data *img);
-
-void	draw_line(t_point point, t_point dest, t_data *img);
-t_data	*put_background(t_data *img);
-
-t_list	*fdf_reader(int fd);
-float	*cstep(float *cstep, t_point *p, t_point *dst, t_point *dlt);
-void	assign_delta(t_point *delta, t_point point, t_point dest);
-void	put_pixel(t_data *img, t_point *point, float *c_step);
 
 int	main(int ac, char **av)
 {
 	t_list	*map;
 	int		fd;
-	//int		i;
 
 	if (ac == 2)
 	{
@@ -64,10 +28,10 @@ int	main(int ac, char **av)
 		if (fd == -1)
 			return (1);
 		map = fdf_reader(fd);
+		close(fd);
 		if (!map)
 			return (1);
 		init_and_draw(&map);
-		close(fd);
 		ft_lstclear(&map, free);
 	}
 	return (EXIT_SUCCESS);
@@ -91,184 +55,9 @@ void	init_and_draw(t_list **map)
 	mlx_loop_hook(img->mlx, &ft_hook_hub, img);
 	mlx_scroll_hook(img->mlx, &my_scrollhook, img);
 	mlx_loop(img->mlx);
-
 	mlx_terminate(img->mlx);
 	ft_lstclear(img->map, free);
 	free (img);
-}
-
-void ft_hook_hub(void* param)
-{
-	t_data	*img;
-
-	img = param;
-	if (mlx_is_key_down(img->mlx, MLX_KEY_ESCAPE))
-		mlx_close_window(img->mlx);
-
-	else if (mlx_is_key_down(img->mlx, MLX_KEY_A))
-	{
-		img->shift_x -= 10;
-		redraw_image(img);
-	}
-	else if (mlx_is_key_down(img->mlx, MLX_KEY_D))
-	{
-		img->shift_x += 10;
-		redraw_image(img);
-	}
-	else if (mlx_is_key_down(img->mlx, MLX_KEY_W))
-	{
-		img->shift_y -= 10;
-		redraw_image(img);
-	}
-	else if (mlx_is_key_down(img->mlx, MLX_KEY_S))
-	{
-		img->shift_y += 10;
-		redraw_image(img);
-	}
-	else if (mlx_is_key_down(img->mlx, MLX_KEY_Z))
-	{
-		if (img->shift_z > -0.5)
-			img->shift_z -= 0.01;
-		redraw_image(img);
-	}
-	else if (mlx_is_key_down(img->mlx, MLX_KEY_X))
-	{
-		if (img->shift_z < 0.5)
-			img->shift_z += 0.01;
-		redraw_image(img);
-	}
-	else if (mlx_is_key_down(img->mlx, MLX_KEY_J))
-	{
-		img->angle_z += 1;
-		redraw_image(img);
-	}
-	else if (mlx_is_key_down(img->mlx, MLX_KEY_L))
-	{
-		img->angle_z -= 1;
-		redraw_image(img);
-	}
-	else if (mlx_is_key_down(img->mlx, MLX_KEY_I))
-	{
-		img->angle_x += 1;
-		redraw_image(img);
-	}
-	else if (mlx_is_key_down(img->mlx, MLX_KEY_K))
-	{
-		img->angle_x -= 1;
-		redraw_image(img);
-	}
-	else if (mlx_is_key_down(img->mlx, MLX_KEY_Y))
-	{
-		img->angle_y -= 1;
-		redraw_image(img);
-	}
-	else if (mlx_is_key_down(img->mlx, MLX_KEY_H))
-	{
-		img->angle_y += 1;
-		redraw_image(img);
-	}
-	else if (mlx_is_key_down(img->mlx, MLX_KEY_M))
-	{
-		img->height_col = YELLOW;
-		redraw_image(img);
-	}
-	else if (mlx_is_key_down(img->mlx, MLX_KEY_N))
-	{
-		img->height_col = MAGENTA;
-		redraw_image(img);
-	}
-	// else if (mlx_is_key_down(img->mlx, MLX_KEY_Q))
-	// {
-	// 	img->color_mode = GRADIENT;
-	// 	redraw_image(img);
-	// }
-	// else if (mlx_is_key_down(img->mlx, MLX_KEY_B))
-	// {
-	// 	img->color_mode = BASIC;
-	// 	redraw_image(img);
-	// }
-	else if (mlx_is_key_down(img->mlx, MLX_KEY_R))
-	{
-		img->shift_x = -100;
-		img->shift_y = 0;
-		img->shift_z = 0.2;
-		img->angle_x = 0;
-		img->angle_y = 0;
-		img->angle_z = 0;
-		img->zoom = zoom_calc(*img->map, img);
-		redraw_image(img);
-	}
-	else if (mlx_is_key_down(img->mlx, MLX_KEY_1))
-	{
-		img->shift_x = -400;
-		img->shift_y = 150;
-		img->shift_z = 0.2;
-		img->angle_x = -30;
-		img->angle_y = 0;
-		img->angle_z = -45;
-		img->zoom = zoom_calc(*img->map, img);
-		redraw_image(img);
-	}
-	else if (mlx_is_key_down(img->mlx, MLX_KEY_KP_ADD))
-	{
-
-		if (img->width < 100)
-			img->zoom += 1;
-		else
-			img->zoom += 0.5;
-
-		redraw_image(img);
-	}
-	else if (mlx_is_key_down(img->mlx, MLX_KEY_KP_SUBTRACT))
-	{
-		if (img->zoom >= 1)
-		{
-			if (img->width < 100)
-				img->zoom -= 1;
-			else
-				img->zoom -= 0.5;
-		}
-		redraw_image(img);
-	}
-	else if (mlx_is_key_down(img->mlx, MLX_KEY_KP_0))
-	{
-		puts("!!!!");
-		//redraw_image(img);
-	}
-}
-
-t_data	*redraw_image(t_data *img)
-{
-	mlx_delete_image(img->mlx, img->img);
-	img->img = mlx_new_image(img->mlx, img->width, img->height);
-	if (!img->img)
-	{
-		mlx_close_window(img->mlx);
-		return (NULL);
-	}
-	mlx_image_to_window(img->mlx, img->img, 0, 0);
-	draw_map(img->map, img);
-
-	return (img);
-}
-
-void my_scrollhook(double xdelta, double ydelta, void* param)
-{
-	t_data	*img;
-
-	(void) xdelta;
-	img = param;
-	if (ydelta > 0)
-	{
-		img->zoom += 1;
-		redraw_image(img);
-	}
-	else if (ydelta < 0)
-	{
-		if (img->zoom >= 1)
-			img->zoom -= 1;
-		redraw_image(img);
-	}
 }
 
 float	zoom_calc(t_list *map, t_data *img)
@@ -287,7 +76,6 @@ float	zoom_calc(t_list *map, t_data *img)
 		img->zoom *= scale_h;
 	else
 		img->zoom *= scale_w;
-
 	return (img->zoom);
 }
 
@@ -298,8 +86,6 @@ t_data	*init_window(t_data *img)
 	img->shift_x = -100;
 	img->shift_y = 0;
 	img->shift_z = 0.2;
-	img->mode = ISO;
-	img->color_mode = GRADIENT;
 	img->angle_x = 0;
 	img->angle_y = 0;
 	img->angle_z = 0;
@@ -313,7 +99,6 @@ t_data	*init_window(t_data *img)
 	img->img = mlx_new_image(img->mlx, img->width, img->height);
 	if (!img->img || !img->backg)
 		return (NULL);
-	img->mode = ISO;
 	if (!put_background(img))
 		return (NULL);
 	return (img);
@@ -337,6 +122,13 @@ t_data	*put_background(t_data *img)
 		}
 		y ++;
 	}
+	mlx_put_string(img->mlx, "ZOOM: scroll | +/-", 6, 1);
+	mlx_put_string(img->mlx, "TRANSLATE: wasd", 6, 19);
+	mlx_put_string(img->mlx, "ROTATE: y/h i/k j/l", 6, 38);
+	mlx_put_string(img->mlx, "CHANGE DEPTH: z/x", 6, 56);
+	mlx_put_string(img->mlx, "Z COLOR: m/n", 6, 74);
+	mlx_put_string(img->mlx, "ISOMETRIC/RESET: r", 6, 92);
+	mlx_put_string(img->mlx, "TOP VIEW: 1", 6, 110);
 	return (img);
 }
 
@@ -376,7 +168,9 @@ t_point	new_p(int x, int y, t_list *map, t_data *img)
 	point.color = map->color_array[x];
 	if (point.z != 0 && point.color == WHITE)
 		point.color = height_to_color(point, img);
-	point = apply_camera(point, img);
+	point.x *= img->zoom;
+	point.y *= img->zoom;
+	point.z *= img->zoom;
 	point = rotation_func(point, img);
 	point.x += img->shift_x;
 	point.y += img->shift_y;
@@ -385,9 +179,8 @@ t_point	new_p(int x, int y, t_list *map, t_data *img)
 	return (point);
 }
 
-unsigned int height_to_color(t_point point, t_data *img)
+unsigned int	height_to_color(t_point point, t_data *img)
 {
-	(void)img;
 	if (point.z > 0)
 	{
 		if (point.z > 6)
@@ -396,16 +189,13 @@ unsigned int height_to_color(t_point point, t_data *img)
 			point.color = img->height_col;
 	}
 	if (point.z < 0)
-		point.color = PURPLE;
+	{
+		if (img->height_col == MAGENTA)
+			point.color = PURPLE;
+		if (img->height_col == YELLOW)
+			point.color = 0x0000FFFF;
+	}
 	return (point.color);
-}
-
-t_point	apply_camera(t_point point, t_data *img)
-{
-	point.x *= img->zoom;
-	point.y *= img->zoom;
-	point.z *= img->zoom;
-	return (point);
 }
 
 t_point	rotation_func(t_point point, t_data *img)
@@ -446,9 +236,9 @@ void	drw_line(t_point point, t_point dest, t_data *img)
 
 	assign_delta(&delta, point, dest);
 	vector_find_sign(point, dest, &sign);
-	error = delta.x - delta.y;
 	colorstep = NULL;
 	colorstep = cstep(colorstep, &point, &dest, &delta);
+	error = delta.x - delta.y;
 	while (point.x != dest.x || point.y != dest.y)
 	{
 		put_pixel(img, &point, colorstep);
@@ -477,8 +267,7 @@ void	put_pixel(t_data *img, t_point *point, float *c_step)
 		point->x >= 0 && point->y >= 0)
 	{
 		mlx_put_pixel(img->img, point->x, point->y, point->color);
-		if (img->color_mode == GRADIENT)
-			gradient_step(point, c_step);
+		gradient_step(point, c_step);
 	}
 }
 

@@ -6,26 +6,26 @@
 /*   By: klukiano <klukiano@student.hive.fi>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/12/08 15:59:06 by klukiano          #+#    #+#             */
-/*   Updated: 2024/01/26 16:23:19 by klukiano         ###   ########.fr       */
+/*   Updated: 2024/01/31 12:21:02 by klukiano         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "../lib/libft/libft.h"
 
 unsigned int	ft_atoi_b(const char *str, int str_base);
-int		is_valid_str(char *str, char *set);
-size_t	ft_strlen(const char *str);
-int		convert_to_dec(char character);
-long	make_power(long str_base, long exponent);
-
+int				is_valid_str(char *str, char *set);
+size_t			ft_strlen(const char *str);
+int				convert_to_dec(char character);
+long			make_power(long str_base, long exponent);
 
 unsigned int	ft_atoi_b(const char *str, int str_base)
 {
-	char set[17] = "0123456789abcdef";
-	unsigned int result;
-	int i;
-	int len;
+	char			*set;
+	unsigned int	result;
+	int				i;
+	int				len;
 
+	set = ft_strdup("0123456789abcdef");
 	result = 0;
 	set[str_base] = '\0';
 	if (!str || str_base == 0 || !is_valid_str((char *)str, set))
@@ -34,18 +34,19 @@ unsigned int	ft_atoi_b(const char *str, int str_base)
 	len = ft_strlen(str);
 	while (str[i])
 	{
-		result = result + convert_to_dec(str[len - i - 1]) * make_power(str_base, i);
+		result += convert_to_dec(str[len - i - 1]) * make_power(str_base, i);
 		i ++;
 	}
+	free (set);
 	return (result);
 }
 
 int	is_valid_str(char *str, char *set)
 {
+	int		i;
+	char	*set_upper;
 
-	int i;
-	char *set_upper = "0123456789ABCDEF";
-
+	set_upper = "0123456789ABCDEF";
 	if (*str == '-')
 		str ++;
 	while (*str)
@@ -54,7 +55,7 @@ int	is_valid_str(char *str, char *set)
 		while (set[i])
 		{
 			if (*str == set[i] || *str == set_upper[i])
-			   break;
+				break ;
 			i ++;
 		}
 		if (set[i] == '\0')
@@ -64,12 +65,14 @@ int	is_valid_str(char *str, char *set)
 	return (1);
 }
 
-int convert_to_dec(char character)
+int	convert_to_dec(char character)
 {
-	char *set = "0123456789abcdef";
-	char *set_upper = "0123456789ABCDEF";
-	int i;
+	char	*set;
+	char	*set_upper;
+	int		i;
 
+	set = "0123456789abcdef";
+	set_upper = "0123456789ABCDEF";
 	if (character == '-')
 		return (0);
 	i = 0;
@@ -80,7 +83,7 @@ int convert_to_dec(char character)
 
 long	make_power(long str_base, long exponent)
 {
-	long result;
+	long	result;
 
 	if (exponent == 0)
 		return (1);

@@ -6,7 +6,7 @@
 /*   By: klukiano <klukiano@student.hive.fi>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/11/27 17:53:32 by klukiano          #+#    #+#             */
-/*   Updated: 2024/01/26 14:57:56 by klukiano         ###   ########.fr       */
+/*   Updated: 2024/01/31 12:26:43 by klukiano         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -25,15 +25,8 @@ int	get_next_line(char **str, int fd)
 	int			bytes_read;
 	int			read_flag;
 
-	if (BUFFER_SIZE < 0)
-	{
-		if (cache)
-			free (cache);
-		cache = NULL;
-		return (-1);
-	}
 	buffer = malloc((size_t)BUFFER_SIZE + 1);
-	if (!buffer || BUFFER_SIZE < 0)
+	if (BUFFER_SIZE < 0 || !buffer)
 	{
 		if (cache)
 			free (cache);
@@ -51,7 +44,7 @@ int	get_next_line(char **str, int fd)
 		return (-1);
 }
 
-int		handle_read(char **cache, char **buffer, int bytes_read)
+int	handle_read(char **cache, char **buffer, int bytes_read)
 {
 	if (bytes_read < 0)
 	{
@@ -128,7 +121,7 @@ int	handle_cache(char **str, char **cache, int bytes_read, int fd)
 		return (return_line(str, &cache, i));
 }
 
-int		return_line(char **str, char ***cache, size_t i)
+int	return_line(char **str, char ***cache, size_t i)
 {
 	char	*line;
 	char	*tmp_cache;
