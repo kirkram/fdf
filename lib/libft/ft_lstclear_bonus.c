@@ -6,7 +6,7 @@
 /*   By: klukiano <klukiano@student.hive.fi>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/12/11 13:53:23 by klukiano          #+#    #+#             */
-/*   Updated: 2023/12/11 14:48:55 by klukiano         ###   ########.fr       */
+/*   Updated: 2024/02/01 10:45:55 by klukiano         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -22,6 +22,7 @@ void	ft_lstclear(t_list **lst, void (*del)(void*))
 		{
 			ptr = (*lst)->next;
 			ft_lstdelone(*lst, del);
+			*lst = NULL;
 			(*lst) = ptr;
 		}
 	}

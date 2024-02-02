@@ -15,16 +15,8 @@ all: $(NAME)
 $(NAME): $(OBJCTS) $(BONUS_OBJCTS) $(BONUS_SRCS)
 	$(LIBCR) $(BONUS_OBJCTS)
 
-# bonus: .bonus
-
-# .bonus: $(NAME) $(BONUS_OBJCTS)
-# 	$(LIBCR) $(BONUS_OBJCTS)
-# 	touch .bonus
-
 %.o: %.c
 	cc $(CFLAGS) -c $< -o $@
-
-#both: $(NAME) bonus
 
 clean: 
 	$(RM) $(OBJCTS) $(BONUS_OBJCTS)

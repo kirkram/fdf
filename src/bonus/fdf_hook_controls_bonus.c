@@ -1,12 +1,12 @@
 /* ************************************************************************** */
 /*                                                                            */
 /*                                                        :::      ::::::::   */
-/*   fdf_hook_controls.c                                :+:      :+:    :+:   */
+/*   fdf_hook_controls_bonus.c                          :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
 /*   By: klukiano <klukiano@student.hive.fi>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/01/31 16:13:49 by klukiano          #+#    #+#             */
-/*   Updated: 2024/01/31 16:52:38 by klukiano         ###   ########.fr       */
+/*   Updated: 2024/02/01 16:03:20 by klukiano         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -81,7 +81,6 @@ void	my_scrollhook(double xdelta, double ydelta, void *param)
 	if (ydelta > 0)
 	{
 		img->zoom += 1;
-		ft_printf("!\n");
 		redraw_image(img);
 	}
 	else if (ydelta < 0)

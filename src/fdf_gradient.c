@@ -6,7 +6,7 @@
 /*   By: klukiano <klukiano@student.hive.fi>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/01/31 16:12:32 by klukiano          #+#    #+#             */
-/*   Updated: 2024/01/31 16:19:11 by klukiano         ###   ########.fr       */
+/*   Updated: 2024/02/02 17:44:48 by klukiano         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -17,6 +17,8 @@ float	*cstep(float *cstep, t_point *p, t_point *dst, t_point *dlt)
 	float		draw_steps;
 
 	cstep = malloc(4 * sizeof(float));
+	if (!cstep)
+		return (NULL);
 	draw_steps = dlt->y;
 	if (dlt->x > dlt->y)
 		draw_steps = dlt->x;

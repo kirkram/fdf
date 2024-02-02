@@ -6,7 +6,7 @@
 /*   By: klukiano <klukiano@student.hive.fi>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/01/31 16:10:42 by klukiano          #+#    #+#             */
-/*   Updated: 2024/01/31 16:11:18 by klukiano         ###   ########.fr       */
+/*   Updated: 2024/02/02 17:45:05 by klukiano         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -36,14 +36,17 @@ t_point	new_p(int x, int y, t_list *map, t_data *img)
 
 unsigned int	height_to_color(t_point point, t_data *img)
 {
-	if (point.z > 0)
+	int	nullpoint;
+
+	nullpoint = 0;
+	if (point.z > nullpoint)
 	{
-		if (point.z > 6)
+		if (point.z > nullpoint + 6)
 			point.color = YELLOW;
 		else
 			point.color = img->height_col;
 	}
-	if (point.z < 0)
+	if (point.z < nullpoint)
 	{
 		if (img->height_col == MAGENTA)
 			point.color = PURPLE;

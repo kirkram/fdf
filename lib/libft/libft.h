@@ -6,7 +6,7 @@
 /*   By: klukiano <klukiano@student.hive.fi>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/11/03 12:31:10 by klukiano@st       #+#    #+#             */
-/*   Updated: 2024/01/29 10:27:16 by klukiano         ###   ########.fr       */
+/*   Updated: 2024/02/01 17:21:32 by klukiano         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -74,6 +74,6 @@ void	ft_lstadd_back(t_list **lst, t_list *new);
 void	ft_lstdelone(t_list *lst, void (*del)(void*));
 void	ft_lstclear(t_list **lst, void (*del)(void*));
 
-int		free_n_0(int *int_array, char **str_array, unsigned int *color_array);
+int		free_n_0(int *int_arr, char **str_arr, unsigned int *color_arr);
 
 #endif

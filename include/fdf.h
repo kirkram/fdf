@@ -6,7 +6,7 @@
 /*   By: klukiano <klukiano@student.hive.fi>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/01/17 16:18:49 by klukiano          #+#    #+#             */
-/*   Updated: 2024/01/31 16:34:52 by klukiano         ###   ########.fr       */
+/*   Updated: 2024/02/01 17:24:21 by klukiano         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -42,7 +42,7 @@ typedef struct s_point
 typedef struct s_data
 {
 	mlx_t			*mlx;
-	mlx_image_t		*img;
+	mlx_image_t		*instance;
 	mlx_image_t		*backg;
 	int32_t			width;
 	int32_t			height;
@@ -54,75 +54,77 @@ typedef struct s_data
 	int				angle_y;
 	float			shift_z;
 	uint32_t		height_col;
+	int				malloc_check;
 	t_list			**map;
 	mlx_key_data_t	keydata;
 }					t_data;
 
-t_list			*fdf_reader(int fd);
 int				check_and_del_newline(char *l);
 int				is_cell_colored(char *str);
 int				is_valid_hex(char *str);
+
+//	fdf_hook_control_hub_bonus.c
 void			ft_hook_hub(void *param);
-
-void			init_and_draw(t_list **map);
-void			draw_map(t_list **map, t_data *img);
-t_point			new_p(int x, int y, t_list *map, t_data *img);
-void			drw_line(t_point point, t_point dest, t_data *img);
-int				ft_abs(int result);
-void			vector_find_sign(t_point point, t_point dest, t_point *sign);
-float			zoom_calc(t_list *map, t_data *img);
-t_data			*init_window(t_data *img);
-t_point			rotation_func(t_point point, t_data *img);
-void			gradient_step(t_point *point, float *colorstep);
-void			my_scrollhook(double xdelta, double ydelta, void *param);
-t_data			*redraw_image(t_data *img);
-unsigned int	height_to_color(t_point point, t_data *img);
-void			draw_line(t_point point, t_point dest, t_data *img);
-t_data			*put_background(t_data *img);
-
-t_list			*fdf_reader(int fd);
-float			*cstep(float *cstep, t_point *p, t_point *dst, t_point *dlt);
-void			assign_delta(t_point *delta, t_point point, t_point dest);
-void			put_pixel(t_data *img, t_point *point, float *c_step);
-void			ft_hook_movement(t_data *img);
 void			check_changes_to_img(t_data *prev, t_data *img);
-void			hook_zoom_buttons(t_data *img);
-void			hook_reset_image(t_data *img);
-void			hook_rotation(t_data *img);
-
-float			zoom_calc(t_list *map, t_data *img);
-void			draw_map(t_list **map, t_data *img);
-void			my_scrollhook(double xdelta, double ydelta, void *param);
-void			my_keyhook(mlx_key_data_t keydata, void *param);
 t_data			*redraw_image(t_data *img);
-unsigned int	height_to_color(t_point point, t_data *img);
-void			draw_line(t_point point, t_point dest, t_data *img);
-t_data			*put_background(t_data *img);
-t_list			*fdf_reader(int fd);
-float			*cstep(float *cstep, t_point *p, t_point *dst, t_point *dlt);
-void			assign_delta(t_point *delta, t_point point, t_point dest);
-void			put_pixel(t_data *img, t_point *point, float *c_step);
-void			ft_hook_movement(t_data *img);
-void			check_changes_to_img(t_data *prev, t_data *img);
-void			hook_zoom_buttons(t_data *img);
-void			hook_reset_image(t_data *img);
-void			hook_rotation(t_data *img);
 
-int				check_and_del_newline(char *l);
+//	fdf_hook_controls_bonus.c
+void			ft_hook_movement(t_data *img);
+void			hook_rotation(t_data *img);
+void			hook_zoom_buttons(t_data *img);
+void			my_scrollhook(double xdelta, double ydelta, void *param);
+void			hook_reset_image(t_data *img);
+
+//	fdf_colors_to_list.c
+void			put_colors_in_list(t_list **line_list, t_list *ptr, int i);
+void			check_width_set_height(t_list **line_list);
 int				is_cell_colored(char *str);
 int				is_valid_hex(char *str);
-long			ft_atoi_b(const char *str, int str_base);
-unsigned int	add_full_alpha(unsigned int color);
-t_list			*gnl_to_list_and_check(t_list **line_list, int fd);
-void			split_lines_to_strings(t_list **line_list);
-void			check_width_set_height(t_list **line_list);
-void			strings_to_numbers(t_list **line_list);
-void			put_colors_in_list(t_list **line_list, t_list *ptr, int i);
 
-unsigned int	add_full_alpha(unsigned int color);
+//	fdf_draw.c
+void			draw_map(t_list **map, t_data *img);
+void			drw_line(t_point point, t_point dest, t_data *img);
+void			delta_sign(t_point *dlt, t_point p, t_point dst, t_point *sign);
+void			put_pixel(t_data *img, t_point *point, float *c_step);
+
+//	fdf_get_colors.c
 int				get_r(unsigned int rgba);
 int				get_g(unsigned int rgba);
 int				get_b(unsigned int rgba);
 int				get_a(unsigned int rgba);
+unsigned int	add_full_alpha(unsigned int color);
+
+//	fdf_gradient.c
+float			*cstep(float *cstep, t_point *p, t_point *dst, t_point *dlt);
+void			gradient_step(t_point *point, float *colorstep);
+
+//	fdf_main.c
+t_list			*fdf_reader(int fd);
+void			init_and_draw(t_list **map);
+t_data			*init_window(t_data *img, t_list *map);
+t_data			*init_window_params(t_data *img);
+t_data			*put_background(t_data *img);
+
+//	fdf_point.c
+t_point			new_p(int x, int y, t_list *map, t_data *img);
+unsigned int	height_to_color(t_point point, t_data *img);
+t_point			rotation_func(t_point point, t_data *img);
+
+//	fdf_reader.c
+t_list			*fdf_reader(int fd);
+t_list			*gnl_to_list_and_check(t_list **line_list, int fd);
+int				check_and_del_newline(char *l);
+t_list			**split_lines_to_strings(t_list **line_list);
+t_list			**strings_to_numbers(t_list **line_list);
+
+//	ft_atoi_b.c
+long			ft_atoi_b(const char *str, int str_base);
+
+// helper_functions.c
+int				free_n_0(int *int_arr, char **str_arr, unsigned int *color_arr);
+float			zoom_calc(t_list *map, t_data *img);
+int				ft_abs(int result);
+void			shift_outofbounds(t_list *map, t_data *img);
+void			p_bounds(t_point *p, t_point index, t_list *ptr, t_data *img);
 
 #endif
