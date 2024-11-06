@@ -6,7 +6,7 @@
 /*   By: klukiano <klukiano@student.hive.fi>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/11/16 11:14:40 by klukiano          #+#    #+#             */
-/*   Updated: 2024/01/26 14:16:22 by klukiano         ###   ########.fr       */
+/*   Updated: 2024/11/06 20:15:18 by klukiano         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -19,14 +19,12 @@
 
 # include <unistd.h>
 # include <stdlib.h>
+# include "../libft/libft.h"
 
 int		get_next_line(char **str, int fd);
-char	*ft_substr(char const *s, unsigned int start, size_t len);
-size_t	ft_strlen(const char *str);
-size_t	ft_strlcpy(char *dst, char *src, size_t dstsize);
-void	*free_str(char *str);
-size_t	find_line(char *str);
-char	*ft_strjoin(char const *s1, char const *s2);
-void	ft_strcpy(char *dest, char *src, char *src2);
+void	handle_buffer(char	**cache, char **buffer, int bytes_read);
+int		handle_cache(char **str, char **cache, int bytes_read, int fd);
+int		return_line(char **str, char ***cache, size_t i);
+int		handle_read(char **cache, char **buffer, int bytes_read);
 
 #endif

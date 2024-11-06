@@ -6,13 +6,14 @@
 /*   By: klukiano <klukiano@student.hive.fi>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/11/03 14:31:22 by klukiano          #+#    #+#             */
-/*   Updated: 2024/01/16 16:15:33 by klukiano         ###   ########.fr       */
+/*   Updated: 2024/11/06 19:24:41 by klukiano         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "libft.h"
 #include <stdlib.h>
 #include <limits.h>
+#include <stdint.h>
 
 void	*ft_calloc(size_t count, size_t size)
 {
