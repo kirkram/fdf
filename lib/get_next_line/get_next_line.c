@@ -6,17 +6,11 @@
 /*   By: klukiano <klukiano@student.hive.fi>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/11/27 17:53:32 by klukiano          #+#    #+#             */
-/*   Updated: 2024/01/31 12:26:43 by klukiano         ###   ########.fr       */
+/*   Updated: 2024/11/06 20:15:28 by klukiano         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
-#include "get_next_line.h"
-
-int		get_next_line(char **str, int fd);
-void	handle_buffer(char	**cache, char **buffer, int bytes_read);
-int		handle_cache(char **str, char **cache, int bytes_read, int fd);
-int		return_line(char **str, char ***cache, size_t i);
-int		handle_read(char **cache, char **buffer, int bytes_read);
+#include "./get_next_line.h"
 
 int	get_next_line(char **str, int fd)
 {

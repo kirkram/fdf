@@ -6,7 +6,7 @@
 /*   By: klukiano <klukiano@student.hive.fi>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/01/17 16:18:49 by klukiano          #+#    #+#             */
-/*   Updated: 2024/02/01 17:24:21 by klukiano         ###   ########.fr       */
+/*   Updated: 2024/11/06 19:46:33 by klukiano         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -25,10 +25,10 @@
 # include <math.h>
 # include <fcntl.h>
 # include "../lib/libft/libft.h"
-# include "../lib/ft_printf/ft_printf.h"
+// # include "../lib/ft_printf/ft_printf.h"
 # include "../lib/get_next_line/get_next_line.h"
 # include "../lib/MLX42/include/MLX42/MLX42.h"
-# include "../lib/MLX42/include/MLX42/MLX42_Int.h"
+//# include "../lib/MLX42/include/MLX42/MLX42_Int.h"
 
 typedef struct s_point
 {

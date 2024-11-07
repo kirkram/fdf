@@ -6,7 +6,7 @@
 /*   By: klukiano <klukiano@student.hive.fi>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/01/16 13:23:45 by klukiano          #+#    #+#             */
-/*   Updated: 2024/02/02 11:19:15 by klukiano         ###   ########.fr       */
+/*   Updated: 2024/11/07 19:54:23 by klukiano         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -15,26 +15,28 @@
 int	main(int ac, char **av)
 {
 	t_list	*map;
-	int		name_len;
 	int		fd;
+	int		name_len;
 
-	if (ac == 2)
+	if (ac == 1 || ac == 2)
 	{
+		if (ac == 1)
+			av[1] = "test_maps/100-6.fdf";
 		fd = open(av[1], O_RDONLY);
 		if (fd < 0)
 			return (1);
 		name_len = ft_strlen(av[1]);
 		if (name_len > 3 && ft_strncmp(av[1] + name_len - 4, ".fdf", 5) != 0)
-			return (1);
+			return (2);
 		map = fdf_reader(fd);
 		close(fd);
 		if (fd < 0 || !map)
-			return (1);
+			return (3);
 		init_and_draw(&map);
 		ft_lstclear(&map, free);
 	}
 	else
-		return (1);
+		return (4);
 	return (EXIT_SUCCESS);
 }
 
@@ -60,25 +62,10 @@ void	init_and_draw(t_list **map)
 	img->map = map;
 	draw_map(img->map, img);
 	mlx_loop_hook(img->mlx, &ft_hook_hub, img);
+	mlx_scroll_hook(img->mlx, &my_scrollhook, img);
 	mlx_loop(img->mlx);
 	mlx_terminate(img->mlx);
 	free (img);
-}
-
-t_data	*init_window(t_data *img, t_list *map)
-{
-	if (!init_window_params(img))
-	{
-		mlx_terminate(img->mlx);
-		return (NULL);
-	}
-	if (!put_background(img))
-	{
-		mlx_terminate(img->mlx);
-		return (NULL);
-	}
-	shift_outofbounds(map, img);
-	return (img);
 }
 
 t_data	*init_window_params(t_data *img)
@@ -105,6 +92,22 @@ t_data	*init_window_params(t_data *img)
 	return (img);
 }
 
+t_data	*init_window(t_data *img, t_list *map)
+{
+	if (!init_window_params(img))
+	{
+		mlx_terminate(img->mlx);
+		return (NULL);
+	}
+	if (!put_background(img))
+	{
+		mlx_terminate(img->mlx);
+		return (NULL);
+	}
+	shift_outofbounds(map, img);
+	return (img);
+}
+
 t_data	*put_background(t_data *img)
 {
 	int		x;
@@ -123,6 +126,12 @@ t_data	*put_background(t_data *img)
 		}
 		y ++;
 	}
-	mlx_put_string(img->mlx, "BASIC VERSION", 6, 1);
+	mlx_put_string(img->mlx, "ISOMETRIC/TOP VIEW:  r/1", 6, 1);
+	mlx_put_string(img->mlx, "ROTATE:              y/h i/k j/l", 6, 19);
+	mlx_put_string(img->mlx, "ZOOM:                scroll | +/-", 6, 37);
+	mlx_put_string(img->mlx, "CHANGE DEPTH:        z/x", 6, 55);
+	mlx_put_string(img->mlx, "TRANSLATE:           wasd", 6, 73);
+	mlx_put_string(img->mlx, "Z COLOR:             m/n", 6, 91);
+	mlx_put_string(img->mlx, "TOP VIEW:            1", 6, 109);
 	return (img);
 }
