@@ -9,22 +9,21 @@ CFLAGS = -Wall -Wextra -Werror -Wunreachable-code -Ofast -lm
 HEADERS	= -I ./include -I ./libft -I /usr/local/Cellar/glfw/include -I "/Users/$(USER)/.brew/opt/glfw/include" 
 DEBUGFLAGS = -g -fsanitize=address,undefined,integer
 LIBS	= $(LIBMLX42) -lm -lglfw -L /Users/$(USER)/.brew/opt/glfw -L/Users/$(USER)/.brew/lib -L/opt/homebrew/lib #-framework Cocoa -framework OpenGL -framework IOKit
-SRCS = ./src/fdf_main.c ./src/helper_functions.c ./src/ft_atoi_b.c ./src/fdf_reader.c ./src/fdf_get_colors.c \
-./src/fdf_colors_to_list.c ./src/fdf_gradient.c ./src/fdf_draw.c ./src/fdf_hook_control_hub.c ./src/fdf_point.c
-BONUS_SRCS = ./src/bonus/fdf_main_bonus.c ./src/bonus/fdf_hook_controls_bonus.c ./src/bonus/fdf_hook_control_hub_bonus.c \
+SRCS = ./src/fdf_main.c ./src/fdf_hook_controls.c ./src/fdf_hook_control_hub.c \
 ./src/helper_functions.c ./src/ft_atoi_b.c ./src/fdf_reader.c ./src/fdf_get_colors.c \
-./src/fdf_colors_to_list.c ./src/fdf_gradient.c ./src/fdf_draw.c ./src/fdf_point.c 
+./src/fdf_colors_to_list.c ./src/fdf_gradient.c ./src/fdf_draw.c ./src/fdf_point.c \
+./lib/libft/ft_substr.c ./lib/libft/ft_strjoin.c
 GNL_SRCS = ./lib/get_next_line/get_next_line_utils.c ./lib/get_next_line/get_next_line.c
 #PRINTF_SRCS = ./lib/ft_printf/ft_printf.c ./lib/ft_printf/ft_putchar.c ./lib/ft_printf/ft_putstr.c
 OBJCTS = $(SRCS:.c=.o)
-BONUS_OBJCTS = $(BONUS_SRCS:.c=.o)
+OBJCTS = $(SRCS:.c=.o)
 GNL_OBJCTS = $(GNL_SRCS:.c=.o)
 RM = rm -f
 
 all: $(NAME)
 
 $(NAME): $(LIBFT) $(LIBMLX42) $(SRCS) $(GNL_SRCS)
-	cc $(CFLAGS) $(HEADERS) $(BONUS_SRCS) $(LIBFT) $(GNL_SRCS) $(LIBS)   -o $(NAME)
+	cc $(CFLAGS) $(HEADERS) $(SRCS) $(LIBFT) $(GNL_SRCS) $(LIBS)   -o $(NAME)
 
 $(LIBMLX42): .libmlx42
 
@@ -54,7 +53,7 @@ $(LIBFT):
 
 clean: 
 	make clean -C $(LIBFT_PATH)
-	$(RM) $(OBJCTS) $(BONUS_OBJCTS) $(PRINTF_OBJCTS)
+	$(RM) $(OBJCTS) $(PRINTF_OBJCTS)
 	
 fclean: clean
 	make -C $(LIBFT_PATH) fclean
@@ -65,4 +64,4 @@ fclean: clean
 
 re: fclean all
 
-.PHONY: all clean fclean re bonus both debug libmlx
+.PHONY: all clean fclean re both debug libmlx
